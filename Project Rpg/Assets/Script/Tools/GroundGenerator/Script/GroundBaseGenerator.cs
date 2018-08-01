@@ -133,7 +133,7 @@ public class GroundBaseGenerator : MonoBehaviour
     /// </summary>
     /// <param name="Height"></param>
     /// <returns></returns>
-    public Color VertexColorByHeight(float Height)
+    Color VertexColorByHeight(float Height)
     {
         if (Height <= RedColorByHeight)
             return Color.red;

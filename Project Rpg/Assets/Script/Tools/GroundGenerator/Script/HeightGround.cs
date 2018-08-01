@@ -11,6 +11,7 @@ public class HeightGround
         public float[] Row;//position dans la ranger
         public Cell.CellData[] CellsInformation;
         public Texture2D[] PreviewCell;
+        public float[] FootPos;
     }
 
     public TileHeight[] HeightGroundData = new TileHeight[10];
@@ -21,9 +22,11 @@ public class HeightGround
             for (int x = 0; x < HeightGroundData.Length; x++)
             {
                 HeightGroundData[i].Row[x] = 0;
-                GameObject.Destroy(HeightGroundData[i].CellsInformation[x].EventScript.gameObject);
+                if(HeightGroundData[i].CellsInformation[x].EventScript)
+                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].EventScript.gameObject);
                 HeightGroundData[i].CellsInformation[x] = new Cell.CellData();
                 HeightGroundData[i].PreviewCell[x] = null;
+                HeightGroundData[i].FootPos[x] = 0;
             }
     }
 
@@ -36,6 +39,8 @@ public class HeightGround
         {
             HeightGroundData[x].Row = new float[size];
             HeightGroundData[x].CellsInformation = new Cell.CellData[size];
+            HeightGroundData[x].PreviewCell = new Texture2D[size];
+            HeightGroundData[x].FootPos = new float[size];
         }
 
         foreach (TileHeight script in HeightGroundData)
@@ -88,14 +93,16 @@ public class HeightGround
         HeightGroundData = newAray;
     }
 
-    void CleanCell()
+    public void CleanCell()
     {
         for (int i = 0; i < HeightGroundData.Length; i++)
         {
             for (int x = 0; x < HeightGroundData.Length; x++)
             {
-                GameObject.Destroy(HeightGroundData[i].CellsInformation[x].EventScript.gameObject);
+                if (HeightGroundData[i].CellsInformation[x].EventScript)
+                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].EventScript.gameObject);
                 HeightGroundData[i].PreviewCell[x] = null;
+                HeightGroundData[i].FootPos[x] = 0;
             }
         }
     }

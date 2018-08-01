@@ -33,6 +33,7 @@ public class GroundGeneratorWindow : EditorWindow
     private bool skinCheckerVue;
     private bool skinCellVue;
     private bool skinCellData;
+    private bool skinCellEditor = true;
     private bool skinDataGroundVue;
     private bool skinLoadGroundVue;
     private bool skinLoadAndCreatGround;
@@ -65,6 +66,8 @@ public class GroundGeneratorWindow : EditorWindow
 
     ///Cell ground 
     GameObject currentGround;
+    int indexCurrentGroundOnTheLenght;
+    int indexCurrentGroundOnTheHeight;
     List<Vector2> cellPaint = new List<Vector2>();
     bool paintMode;
     bool valueChoice;
@@ -86,9 +89,12 @@ public class GroundGeneratorWindow : EditorWindow
 
     ///Asset Editor
     GameObject[] assetsImport = new GameObject[6];
+    float[] assetFoot = new float[6];
     Texture2D[] assetPreview = new Texture2D[6];
     GameObject currentAsset;
+    int currentAssetIndex;
     Texture2D currentAssetPreview;
+    bool cellEraserMode;
 
     ///Vertex Color
     float vertexColorRedValue = 0;
@@ -145,7 +151,7 @@ public class GroundGeneratorWindow : EditorWindow
             CheckerEditor();
 
         else if (skinImportAsset)
-            SkinImportAssetEditor();
+            ImportAssetEditor();
 
         else if (skinAssetVue)
             SkinAssetEditor();
@@ -207,11 +213,12 @@ public class GroundGeneratorWindow : EditorWindow
             GenericMenu toolsMenu = new GenericMenu();
 
             toolsMenu.AddItem(new GUIContent("Clean"), false, CleanCurrentCell);
-            toolsMenu.AddSeparator("");
             toolsMenu.AddItem(new GUIContent("Flatten"), false, FlattenVue);
             toolsMenu.AddSeparator("");
-            toolsMenu.AddItem(new GUIContent("Cell data vue"), skinCellData, CellDataVue);
-            toolsMenu.AddItem(new GUIContent("Flatten Cell data"), false, FlattenWalkableCell);
+            toolsMenu.AddItem(new GUIContent("Cell Editor Vue"), skinCellEditor, CellEditorVue);
+            toolsMenu.AddSeparator("");
+            toolsMenu.AddItem(new GUIContent("Cell Data Vue"), skinCellData, CellDataVue);
+            toolsMenu.AddItem(new GUIContent("Flatten Cell Data"), false, FlattenWalkableCell);
 
             Rect dropDownRect = new Rect(123, 3, 0, 16);
             toolsMenu.DropDown(dropDownRect);
@@ -228,6 +235,8 @@ public class GroundGeneratorWindow : EditorWindow
             toolsMenu.AddItem(new GUIContent("Assets Import"), false, AssetImportVue);
             toolsMenu.AddSeparator("");
             toolsMenu.AddItem(new GUIContent("Asset Vue"), skinAssetVue, SkinAssetVue);
+            //toolsMenu.AddItem(new GUIContent("Clean Assets"),false,)
+
             Rect dropDownRect = new Rect(173, 3, 0, 16);
             toolsMenu.DropDown(dropDownRect);
         }
@@ -350,7 +359,17 @@ public class GroundGeneratorWindow : EditorWindow
 
     void CellDataVue()
     {
-        skinCellData = !skinCellData;
+        skinCellEditor = false;
+        skinCellData = true;
+        skinAssetVue = false;
+        skinImportAsset = false;
+        repaint = true;
+    }
+
+    void CellEditorVue()
+    {
+        skinCellEditor = true;
+        skinCellData = false;
         skinAssetVue = false;
         skinImportAsset = false;
         repaint = true;
@@ -366,6 +385,7 @@ public class GroundGeneratorWindow : EditorWindow
 
     void SkinAssetVue()
     {
+        skinCellEditor = false;
         skinCellData = false;
         skinAssetVue = true;
         repaint = true;
@@ -569,6 +589,10 @@ public class GroundGeneratorWindow : EditorWindow
                 if (GUI.Button(buttonRect, "" + index))
                 {
                     skinCellVue = true;
+
+                    indexCurrentGroundOnTheLenght = x;
+                    indexCurrentGroundOnTheHeight = Mathf.Abs(y - checkerOnTheHeight);
+
                     currentGround = checker[index];
                     currentHeightGround = currentGround.GetComponent<GroundBaseGenerator>().HeightChecker;
                     skinCheckerVue = false;
@@ -594,7 +618,7 @@ public class GroundGeneratorWindow : EditorWindow
         }
 
         #region Cell ground
-        if (!skinCellData)
+        if (skinCellEditor)
         {
             verticalToolBarButton.y += 45;
             if (GUI.Button(verticalToolBarButton, "Build"))
@@ -614,11 +638,18 @@ public class GroundGeneratorWindow : EditorWindow
             {
                 paintMode = false;
             }
+
+            verticalToolBarButton.y += 45;
+            if (GUI.Button(verticalToolBarButton, "Data"))
+            {
+                skinCellEditor = false;
+                skinCellData = true;
+            }
         }
         #endregion
 
         #region Cell Data
-        else
+        else if (skinCellData)
         {
             verticalToolBarButton.y += 45;
             if (walkableMode)
@@ -673,6 +704,12 @@ public class GroundGeneratorWindow : EditorWindow
                 groundEllementVue = true;
             }
 
+            verticalToolBarButton.y += 45;
+            if (GUI.Button(verticalToolBarButton, "Editor"))
+            {
+                skinCellData = false;
+                skinCellEditor = true;
+            }
         }
         #endregion
 
@@ -914,7 +951,7 @@ public class GroundGeneratorWindow : EditorWindow
         #endregion
     }
 
-    void SkinImportAssetEditor()
+    void ImportAssetEditor()
     {
         Rect borderRect = new Rect(MidlePos(new Vector2(406, 306)), new Vector2(406, 306));
         EditorGUI.DrawRect(borderRect, borderColor);
@@ -926,31 +963,52 @@ public class GroundGeneratorWindow : EditorWindow
         GUI.Label(susbtitleRect, "Import Assets Editor", subtitle);
 
         Rect borderFieldRect = new Rect(susbtitleRect.x + 10, susbtitleRect.y + 30, 360, 20);
-        Rect backgroundFieldRect = new Rect(susbtitleRect.x + 13, susbtitleRect.y + 33, 354, 14);
-
+        Rect backgroundObjFieldRect = new Rect(susbtitleRect.x + 13, susbtitleRect.y + 33, 304, 14);
+        Rect backgroundFloatFieldRect = new Rect(susbtitleRect.x + 323, susbtitleRect.y + 33, 40, 14);
+        
         for (int i = 0; i < 6; i++)
         {
             EditorGUI.DrawRect(borderFieldRect, borderColor);
-            EditorGUI.DrawRect(backgroundFieldRect, backgroundColor);
+            EditorGUI.DrawRect(backgroundObjFieldRect, backgroundColor);
+            EditorGUI.DrawRect(backgroundFloatFieldRect, backgroundColor);
 
-            assetsImport[i] = (GameObject)EditorGUI.ObjectField(backgroundFieldRect, assetsImport[i], typeof(GameObject), true);
+            assetsImport[i] = (GameObject)EditorGUI.ObjectField(backgroundObjFieldRect, assetsImport[i], typeof(GameObject), true);
 
-            if(AssetPreview.GetAssetPreview(assetsImport[i]) && !Directory.Exists("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview.jpg"))
+            if(assetsImport[i] && assetFoot[i] == 0)
+            {
+                assetFoot[i] = CalculateBoundingBoxSize(assetsImport[i]) / 2f;
+                EditorGUI.LabelField(backgroundFloatFieldRect, "" + assetFoot[i]);          
+            }
+            else if(assetsImport[i])
+                assetFoot[i] = EditorGUI.FloatField(backgroundFloatFieldRect, assetFoot[i]);
+
+            if (assetsImport[i] && assetsImport[i].GetComponent<EventCell>() == null)
+                assetsImport[i] = null;
+
+            if (AssetPreview.GetAssetPreview(assetsImport[i]) && !Directory.Exists("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview.jpg"))
             {
                 File.WriteAllBytes("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview.jpg", AssetPreview.GetAssetPreview(assetsImport[i]).EncodeToPNG());
             }
-            if(AssetPreview.GetAssetPreview(assetsImport[i]))
+            if (AssetPreview.GetAssetPreview(assetsImport[i]))
             {
                 assetPreview[i] = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview.jpg", typeof(Texture2D));
             }
 
             borderFieldRect.y += 30;
-            backgroundFieldRect.y += 30;
+            backgroundObjFieldRect.y += 30;
+            backgroundFloatFieldRect.y += 30;
         }
 
-        Rect buttonRect = new Rect(backgroundRect.x + backgroundRect.size.x /2 - 50, backgroundRect.y + backgroundRect.size.y - 50, 100, 35);
+        Rect buttonRect = new Rect(backgroundRect.x + backgroundRect.size.x / 2 - 150, backgroundRect.y + backgroundRect.size.y - 50, 100, 35);
         if (GUI.Button(buttonRect, "Back"))
             skinImportAsset = false;
+
+        buttonRect.x += 200;
+        if (GUI.Button(buttonRect, "Assets Vue"))
+        {
+            skinImportAsset = false;
+            SkinAssetVue();
+        }
     }
 
     void SkinAssetEditor()
@@ -973,15 +1031,32 @@ public class GroundGeneratorWindow : EditorWindow
             verticalToolBarButton.y += 45;
             if (GUI.Button(verticalToolBarButton, assetPreview[assetsIndex]))
             {
-                currentAsset = assetsImport[assetsIndex];
-                currentAssetPreview = assetPreview[assetsIndex];
+                if(assetsImport[assetsIndex] != null)//Cell containt any object ?
+                {
+                    currentAsset = assetsImport[assetsIndex];
+                    currentAssetPreview = assetPreview[assetsIndex];
+                    currentAssetIndex = assetsIndex;
+                    cellEraserMode = false;
+                }
+                else //Load the import assets editor
+                    AssetImportVue();
             }
         }
 
         verticalToolBarButton.y += 45;
-        if (GUI.Button(verticalToolBarButton, "Eraser"))
+        if (cellEraserMode)
         {
-
+            if (GUI.Button(verticalToolBarButton, "E"))
+            {
+                cellEraserMode = false;
+            }
+        }
+        else
+        {
+            if (GUI.Button(verticalToolBarButton, "Eraser"))
+            {
+                cellEraserMode = true;
+            }
         }
         #endregion
 
@@ -1001,7 +1076,53 @@ public class GroundGeneratorWindow : EditorWindow
             {
                 if (x != 0)
                     cellRect.x += cellRect.size.x;
-                EditorGUI.DrawRect(cellRect, borderColor);
+
+                #region Instantiate Mode
+                if (!cellEraserMode)
+                {
+                    if (cellRect.Contains(Event.current.mousePosition))
+                    {
+                        if (mouseClicked && currentAsset && currentHeightGround.HeightGroundData[y].PreviewCell[x] != currentAssetPreview)
+                        {
+                            if (currentHeightGround.HeightGroundData[y].CellsInformation[x].EventScript)
+                                DestroyImmediate(currentHeightGround.HeightGroundData[y].CellsInformation[x].EventScript.gameObject);
+
+                            currentHeightGround.HeightGroundData[y].PreviewCell[x] = currentAssetPreview;
+
+                            Vector3 cellPos =
+                                new Vector3(x + (cellByLenghtChecker * indexCurrentGroundOnTheLenght) + .5f,
+                                currentHeightGround.HeightGroundData[y].Row[x] + assetFoot[currentAssetIndex],
+                                y + (cellByLenghtChecker * indexCurrentGroundOnTheHeight) + .5f);
+
+                            GameObject newObject = GameObject.Instantiate<GameObject>(currentAsset, cellPos, Quaternion.identity, currentGround.transform);
+
+                            currentHeightGround.HeightGroundData[y].CellsInformation[x].EventScript = newObject.GetComponent<EventCell>();
+                            currentHeightGround.HeightGroundData[y].FootPos[x] = assetFoot[currentAssetIndex];
+                            Repaint();
+                        }
+                    }
+                }
+                #endregion
+
+                #region Eraser Mode
+                else
+                {
+                    if (mouseClicked && cellRect.Contains(Event.current.mousePosition) && currentHeightGround.HeightGroundData[y].PreviewCell[x])
+                    {
+                        currentHeightGround.HeightGroundData[y].PreviewCell[x] = null;
+                        DestroyImmediate(currentHeightGround.HeightGroundData[y].CellsInformation[x].EventScript.gameObject);
+                        Repaint();
+                    }
+                }
+                #endregion
+
+                #region rect draw
+                if (!currentHeightGround.HeightGroundData[y].CellsInformation[x].EventScript)
+                    EditorGUI.DrawRect(cellRect, borderColor);
+                else
+                    EditorGUI.DrawPreviewTexture(cellRect, currentHeightGround.HeightGroundData[y].PreviewCell[x]);
+                #endregion
+
                 cellRect.x += 5;
             }
         }
@@ -1121,12 +1242,12 @@ public class GroundGeneratorWindow : EditorWindow
 
     void FlattenAllCheckboard()
     {
-        foreach (HeightGround height in height)
+        foreach (HeightGround heightCell in height)
         {
             for (int y = 0; y < cellByLenghtChecker; y++)
                 for (int x = 0; x < cellByLenghtChecker; x++)
                 {
-                    height.HeightGroundData[y].Row[x] = flattenCellValueCheckboard;
+                    heightCell.HeightGroundData[y].Row[x] = flattenCellValueCheckboard;
                 }
         }
     }
@@ -1145,6 +1266,7 @@ public class GroundGeneratorWindow : EditorWindow
             foreach (GameObject obj in checker)
                 DestroyImmediate(obj);
             checker.Clear();
+
         }
 
         int cell = cellByLenghtChecker + 1;
@@ -1179,8 +1301,8 @@ public class GroundGeneratorWindow : EditorWindow
             }
 
 
-        CalculateHeightBorder();
-        ApplyVertexColor();
+        CalculateHeightBorder();//Calculate the height of the top and the right
+        ApplyVertexColor();//Calculate the vertex color and build after
 
         groundCreat = true;
     }
@@ -1350,6 +1472,18 @@ public class GroundGeneratorWindow : EditorWindow
     void RebuildCurrentChecker()
     {
         currentGround.GetComponent<GroundBaseGenerator>().GenerateGroundBase();
+        for(int y = 0; y < cellByLenghtChecker;y++)
+        {
+            for(int x = 0; x < cellByLenghtChecker; x++)
+            {
+                if(currentHeightGround.HeightGroundData[y].CellsInformation[x].EventScript)
+                {
+                    GameObject obj = currentHeightGround.HeightGroundData[y].CellsInformation[x].EventScript.gameObject;
+
+                    obj.transform.position = new Vector3(obj.transform.position.x, currentHeightGround.HeightGroundData[y].Row[x] + currentHeightGround.HeightGroundData[y].FootPos[x], obj.transform.position.z);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -1358,7 +1492,24 @@ public class GroundGeneratorWindow : EditorWindow
     void RebuildAllGround()
     {
         for (int index = 0; index < checker.Count; index++)
+        {
             checker[index].GetComponent<GroundBaseGenerator>().GenerateGroundBase();
+
+            for (int y = 0; y < cellByLenghtChecker; y++)
+            {
+                for (int x = 0; x < cellByLenghtChecker; x++)
+                {
+                    if (checker[index].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].CellsInformation[x].EventScript)
+                    {
+                        GameObject obj = checker[index].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].CellsInformation[x].EventScript.gameObject;
+
+                        obj.transform.position = new Vector3(obj.transform.position.x, 
+                            checker[index].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].Row[x] + currentHeightGround.HeightGroundData[y].FootPos[x], 
+                            obj.transform.position.z);
+                    }
+                }
+            }
+        }
     }
 
     void CleanCurrentCell()
@@ -1468,10 +1619,13 @@ public class GroundGeneratorWindow : EditorWindow
     }
     #endregion
 
-    #region CustomGround
-    void ImportAssets()
+    #region
+    float CalculateBoundingBoxSize(GameObject obj)
     {
+        if(!obj.GetComponent<MeshFilter>())
+            obj.AddComponent<MeshFilter>();
 
+        return obj.GetComponent<MeshFilter>().sharedMesh.bounds.size.y;
     }
     #endregion
 }
