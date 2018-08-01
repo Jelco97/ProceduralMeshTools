@@ -54,7 +54,6 @@ public class GroundGeneratorWindow : EditorWindow
     GameObject groundFolder;
     List<GameObject> checker = new List<GameObject>();
     List<HeightGround> height = new List<HeightGround>();//Only use for load and creat 
-    List<Cell> cellsData = new List<Cell>();
     HeightGround currentHeightGround;
     MapDataSave currentMapDataSave;
     string initNameMap;
@@ -89,6 +88,7 @@ public class GroundGeneratorWindow : EditorWindow
     GameObject[] assetsImport = new GameObject[6];
     Texture2D[] assetPreview = new Texture2D[6];
     GameObject currentAsset;
+    Texture2D currentAssetPreview;
 
     ///Vertex Color
     float vertexColorRedValue = 0;
@@ -935,16 +935,20 @@ public class GroundGeneratorWindow : EditorWindow
 
             assetsImport[i] = (GameObject)EditorGUI.ObjectField(backgroundFieldRect, assetsImport[i], typeof(GameObject), true);
 
-            if(assetsImport[i] && !Directory.Exists("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview"))
+            if(AssetPreview.GetAssetPreview(assetsImport[i]) && !Directory.Exists("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview.jpg"))
             {
-                AssetDatabase.CreateAsset(AssetPreview.GetAssetPreview(assetsImport[i]), "Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview");
+                File.WriteAllBytes("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview.jpg", AssetPreview.GetAssetPreview(assetsImport[i]).EncodeToPNG());
+            }
+            if(AssetPreview.GetAssetPreview(assetsImport[i]))
+            {
+                assetPreview[i] = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/Script/Tools/GroundGenerator/PreviewGameObject/" + assetsImport[i].name + "Preview.jpg", typeof(Texture2D));
             }
 
             borderFieldRect.y += 30;
             backgroundFieldRect.y += 30;
         }
 
-        Rect buttonRect = new Rect(200, backgroundRect.y + backgroundRect.size.y - 50, 100, 35);
+        Rect buttonRect = new Rect(backgroundRect.x + backgroundRect.size.x /2 - 50, backgroundRect.y + backgroundRect.size.y - 50, 100, 35);
         if (GUI.Button(buttonRect, "Back"))
             skinImportAsset = false;
     }
@@ -967,9 +971,10 @@ public class GroundGeneratorWindow : EditorWindow
         for (int assetsIndex = 0; assetsIndex < 6; assetsIndex++)
         {
             verticalToolBarButton.y += 45;
-            if (GUI.Button(verticalToolBarButton, AssetPreview.GetAssetPreview(assetsImport[assetsIndex])))
+            if (GUI.Button(verticalToolBarButton, assetPreview[assetsIndex]))
             {
                 currentAsset = assetsImport[assetsIndex];
+                currentAssetPreview = assetPreview[assetsIndex];
             }
         }
 

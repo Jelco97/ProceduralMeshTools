@@ -29,7 +29,7 @@ public class HeightGround
 
     public void InitialisationRowArray(int size)
     {
-        CleanCell();
+        //CleanCell();
 
         HeightGroundData = new TileHeight[size];
         for (int x = 0; x < size; x++)
