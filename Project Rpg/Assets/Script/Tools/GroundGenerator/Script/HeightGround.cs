@@ -9,7 +9,7 @@ public class HeightGround
     public struct TileHeight
     {
         public float[] Row;//position dans la ranger
-        public Cell.CellData[] CellsInformation;
+        public Cell[] CellsInformation;
         public Texture2D[] PreviewCell;
         public float[] FootPos;
     }
@@ -22,9 +22,9 @@ public class HeightGround
             for (int x = 0; x < HeightGroundData.Length; x++)
             {
                 HeightGroundData[i].Row[x] = 0;
-                if(HeightGroundData[i].CellsInformation[x].EventScript)
-                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].EventScript.gameObject);
-                HeightGroundData[i].CellsInformation[x] = new Cell.CellData();
+                if (HeightGroundData[i].CellsInformation[x].CellContaint.EventScript)
+                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].CellContaint.EventScript.gameObject);
+                HeightGroundData[i].CellsInformation[x] = new Cell();
                 HeightGroundData[i].PreviewCell[x] = null;
                 HeightGroundData[i].FootPos[x] = 0;
             }
@@ -38,17 +38,18 @@ public class HeightGround
         for (int x = 0; x < size; x++)
         {
             HeightGroundData[x].Row = new float[size];
-            HeightGroundData[x].CellsInformation = new Cell.CellData[size];
+            HeightGroundData[x].CellsInformation = new Cell[size];
             HeightGroundData[x].PreviewCell = new Texture2D[size];
             HeightGroundData[x].FootPos = new float[size];
         }
 
         foreach (TileHeight script in HeightGroundData)
         {
-            for(int i = 0; i<size;i++)
+            Debug.Log(script.CellsInformation[0]);
+            for (int i = 0; i < size; i++)
             {
-                script.CellsInformation[i].Walkable = true;
-                script.CellsInformation[i].GroundAtribut = Cell.GroundElement.Earth;
+                script.CellsInformation[i] = new Cell();
+                script.CellsInformation[i].CellContaint = new Cell.CellData { Walkable = true, GroundAtribut = Cell.GroundElement.Earth, EventScript = null };
             }
         }
     }
@@ -67,20 +68,20 @@ public class HeightGround
         for (int x = 0; x < i; x++)
         {
             newAray[x].Row = new float[i];
-            newAray[x].CellsInformation = new Cell.CellData[i];
-            for(int index = 0; index < i; index++)
+            newAray[x].CellsInformation = new Cell[i];
+            for (int index = 0; index < i; index++)
             {
-                newAray[x].CellsInformation[index].Walkable = true;
-                newAray[x].CellsInformation[index].GroundAtribut = Cell.GroundElement.Earth;
+                newAray[x].CellsInformation[index].CellContaint.Walkable = true;
+                newAray[x].CellsInformation[index].CellContaint.GroundAtribut = Cell.GroundElement.Earth;
             }
         }
 
-        for(int y = 0; y < i; y++)
+        for (int y = 0; y < i; y++)
         {
             if (y >= maxIndex)
                 continue;
 
-            for(int x = 0; x < i; x++)
+            for (int x = 0; x < i; x++)
             {
                 if (x >= maxIndex)
                     continue;
@@ -99,8 +100,8 @@ public class HeightGround
         {
             for (int x = 0; x < HeightGroundData.Length; x++)
             {
-                if (HeightGroundData[i].CellsInformation[x].EventScript)
-                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].EventScript.gameObject);
+                if (HeightGroundData[i].CellsInformation[x].CellContaint.EventScript)
+                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].CellContaint.EventScript.gameObject);
                 HeightGroundData[i].PreviewCell[x] = null;
                 HeightGroundData[i].FootPos[x] = 0;
             }

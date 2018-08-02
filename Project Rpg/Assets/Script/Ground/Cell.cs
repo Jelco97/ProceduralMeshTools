@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class Cell
 {
     public enum GroundElement
@@ -13,6 +14,7 @@ public class Cell
         Sand
     }
 
+    [System.Serializable]
     public struct CellData
     {
         public bool Walkable;
