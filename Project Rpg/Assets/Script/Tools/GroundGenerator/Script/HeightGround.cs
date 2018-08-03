@@ -45,7 +45,6 @@ public class HeightGround
 
         foreach (TileHeight script in HeightGroundData)
         {
-            Debug.Log(script.CellsInformation[0]);
             for (int i = 0; i < size; i++)
             {
                 script.CellsInformation[i] = new Cell();

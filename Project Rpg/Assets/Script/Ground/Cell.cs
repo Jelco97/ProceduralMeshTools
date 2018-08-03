@@ -17,6 +17,7 @@ public class Cell
     [System.Serializable]
     public struct CellData
     {
+        public float Height;
         public bool Walkable;
         public GroundElement GroundAtribut;
         public EventCell EventScript;
