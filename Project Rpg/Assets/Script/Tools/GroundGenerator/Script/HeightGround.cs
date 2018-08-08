@@ -6,44 +6,43 @@ using UnityEngine;
 public class HeightGround
 {
     [System.Serializable]
-    public struct TileHeight
+    public struct MapRowData
     {
         public float[] Row;//position dans la ranger
+        public float[] Distance;
         public Cell[] CellsInformation;
         public Texture2D[] PreviewCell;
         public float[] FootPos;
     }
 
-    public TileHeight[] HeightGroundData = new TileHeight[10];
+    public MapRowData[] MapRowsData = new MapRowData[10];
 
     public void CleanHeight()
     {
-        for (int i = 0; i < HeightGroundData.Length; i++)
-            for (int x = 0; x < HeightGroundData.Length; x++)
+        for (int i = 0; i < MapRowsData.Length; i++)
+            for (int x = 0; x < MapRowsData.Length; x++)
             {
-                HeightGroundData[i].Row[x] = 0;
-                if (HeightGroundData[i].CellsInformation[x].CellContaint.EventScript)
-                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].CellContaint.EventScript.gameObject);
-                HeightGroundData[i].CellsInformation[x] = new Cell();
-                HeightGroundData[i].PreviewCell[x] = null;
-                HeightGroundData[i].FootPos[x] = 0;
+                MapRowsData[i].Row[x] = 0;
+                if (MapRowsData[i].CellsInformation[x].CellContaint.EventScript)
+                    GameObject.DestroyImmediate(MapRowsData[i].CellsInformation[x].CellContaint.EventScript.gameObject);
+                MapRowsData[i].CellsInformation[x] = new Cell();
+                MapRowsData[i].PreviewCell[x] = null;
+                MapRowsData[i].FootPos[x] = 0;
             }
     }
 
     public void InitialisationRowArray(int size)
     {
-        //CleanCell();
-
-        HeightGroundData = new TileHeight[size];
+        MapRowsData = new MapRowData[size];
         for (int x = 0; x < size; x++)
         {
-            HeightGroundData[x].Row = new float[size];
-            HeightGroundData[x].CellsInformation = new Cell[size];
-            HeightGroundData[x].PreviewCell = new Texture2D[size];
-            HeightGroundData[x].FootPos = new float[size];
+            MapRowsData[x].Row = new float[size];
+            MapRowsData[x].CellsInformation = new Cell[size];
+            MapRowsData[x].PreviewCell = new Texture2D[size];
+            MapRowsData[x].FootPos = new float[size];
         }
 
-        foreach (TileHeight script in HeightGroundData)
+        foreach (MapRowData script in MapRowsData)
         {
             for (int i = 0; i < size; i++)
             {
@@ -61,15 +60,16 @@ public class HeightGround
     {
         CleanCell();
 
-        int maxIndex = HeightGroundData.Length;
+        int maxIndex = MapRowsData.Length;
 
-        TileHeight[] newAray = new TileHeight[i];
+        MapRowData[] newAray = new MapRowData[i];
         for (int x = 0; x < i; x++)
         {
             newAray[x].Row = new float[i];
             newAray[x].CellsInformation = new Cell[i];
             for (int index = 0; index < i; index++)
             {
+                newAray[x].CellsInformation[index] = new Cell();
                 newAray[x].CellsInformation[index].CellContaint.Walkable = true;
                 newAray[x].CellsInformation[index].CellContaint.GroundAtribut = Cell.GroundElement.Earth;
             }
@@ -85,25 +85,60 @@ public class HeightGround
                 if (x >= maxIndex)
                     continue;
 
-                newAray[y].Row[x] = HeightGroundData[y].Row[x];
-                newAray[y].CellsInformation[x] = HeightGroundData[y].CellsInformation[x];
+                newAray[y].Row[x] = MapRowsData[y].Row[x];
+                newAray[y].CellsInformation[x] = MapRowsData[y].CellsInformation[x];
             }
         }
 
-        HeightGroundData = newAray;
+        MapRowsData = newAray;
     }
 
     public void CleanCell()
     {
-        for (int i = 0; i < HeightGroundData.Length; i++)
+        for (int i = 0; i < MapRowsData.Length; i++)
         {
-            for (int x = 0; x < HeightGroundData.Length; x++)
+            for (int x = 0; x < MapRowsData.Length; x++)
             {
-                if (HeightGroundData[i].CellsInformation[x].CellContaint.EventScript)
-                    GameObject.DestroyImmediate(HeightGroundData[i].CellsInformation[x].CellContaint.EventScript.gameObject);
-                HeightGroundData[i].PreviewCell[x] = null;
-                HeightGroundData[i].FootPos[x] = 0;
+                if (MapRowsData[i].CellsInformation[x].CellContaint.EventScript)
+                    GameObject.DestroyImmediate(MapRowsData[i].CellsInformation[x].CellContaint.EventScript.gameObject);
+                MapRowsData[i].PreviewCell[x] = null;
+                MapRowsData[i].FootPos[x] = 0;
             }
         }
+    }
+
+    private float GetDistance(int x, int y)
+    {
+        if (x < 0 || x > 9 || y < 0 || y > 9)//the cell evaluate is in the checker ?
+            return -1;// if not, return -1;
+        return MapRowsData[x].Distance[y];// else if, return the distance
+    }
+
+    public void ComputeHeight()
+    {
+        for (int i = 0; i < MapRowsData.Length; i++)
+        {
+            MapRowsData[i].Distance = new float[MapRowsData.Length];//Initialisation of distance (size array)
+            for (int j = 0; j < MapRowsData.Length; j++)// for eatch row, calculate the distance
+                MapRowsData[i].Distance[j] = MapRowsData[i].Row[j] > 0 ? 0 : -1;//if row = 0 , distance = -1
+        }
+
+        for (int k = 0; k < 9; k++)//Calculate the distance betwen the cell walkable and the other
+            for (int i = 0; i < MapRowsData.Length; i++)//postion of the checker on Z axis
+                for (int j = 0; j < MapRowsData.Length; j++)//position in the checker on X axis
+                {
+                    if (GetDistance(i, j) == -1 && //if the cell in this pos = 0, stop this condition
+                        (GetDistance(i - 1, j) == k ||
+                        GetDistance(i + 1, j) == k ||
+                        GetDistance(i, j - 1) == k ||
+                        GetDistance(i, j + 1) == k ||
+                        GetDistance(i - 1, j - 1) == k ||
+                        GetDistance(i + 1, j - 1) == k ||
+                        GetDistance(i - 1, j + 1) == k ||
+                        GetDistance(i + 1, j + 1) == k))
+                    {
+                        MapRowsData[i].Distance[j] = k + 1;
+                    }
+                }
     }
 }

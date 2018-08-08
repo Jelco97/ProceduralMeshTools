@@ -32,6 +32,7 @@ public class GroundGeneratorWindow : EditorWindow
     private bool skinNewGroundVue;
     private bool skinCheckerVue;
     private bool skinCellVue;
+    private bool skinUnwalkableByHeightVue;
     private bool skinCellDataVue;
     private bool skinCellEditorVue = true;
     private bool skinDataGroundVue;
@@ -78,6 +79,7 @@ public class GroundGeneratorWindow : EditorWindow
 
     ///Cell ground 
     GameObject currentGround;
+    int indexCurrentChecker;
     int indexCurrentGroundOnTheLenght;
     int indexCurrentGroundOnTheHeight;
     List<Vector2> cellPaint = new List<Vector2>();
@@ -97,6 +99,7 @@ public class GroundGeneratorWindow : EditorWindow
     bool sandMode;
     int holdMode;
     Cell.GroundElement currentGroundElement = Cell.GroundElement.Earth;
+    float maxHeightWalkableValue;
 
     ///Asset Editor
     GameObject[] assetsImport = new GameObject[6];
@@ -171,14 +174,28 @@ public class GroundGeneratorWindow : EditorWindow
             ImportAssetEditor();
 
         else if (skinAssetVue)
-            SkinAssetEditor();
+            AssetEditor();
+
+        else if (skinUnwalkableByHeightVue)
+            UnwalkableCellByHeightEditor();
 
         else if (skinCellVue)
             CellEditor();
 
+        SmartKey();
+
         if (repaint)
         {
             repaint = false;
+            Repaint();
+        }
+    }
+
+    void SmartKey()
+    {
+        if (skinCellEditorVue && Event.current.keyCode == KeyCode.P && Event.current.type == EventType.KeyDown)
+        {
+            paintMode = !paintMode;
             Repaint();
         }
     }
@@ -240,6 +257,7 @@ public class GroundGeneratorWindow : EditorWindow
             toolsMenu.AddSeparator("");
             toolsMenu.AddItem(new GUIContent("Cell Data Vue"), skinCellDataVue, CellDataVue);
             toolsMenu.AddItem(new GUIContent("Flatten Cell Data"), false, FlattenWalkableCell);
+            toolsMenu.AddItem(new GUIContent("Unwalkable by height"), false, UnwalkableByHeightVue);
 
             Rect dropDownRect = new Rect(123, 3, 0, 16);
             toolsMenu.DropDown(dropDownRect);
@@ -302,7 +320,7 @@ public class GroundGeneratorWindow : EditorWindow
 
         height.Clear();
         foreach (GameObject obj in checker)
-            height.Add(obj.GetComponent<GroundBaseGenerator>().HeightChecker);
+            height.Add(obj.GetComponent<GroundBaseGenerator>().MapDefinition);
 
         currentMapDataSave = new MapDataSave();
         currentMapDataSave.NameMap = nameMap;
@@ -412,6 +430,11 @@ public class GroundGeneratorWindow : EditorWindow
         skinAssetVue = false;
         skinImportAssetVue = false;
         repaint = true;
+    }
+
+    void UnwalkableByHeightVue()
+    {
+        skinUnwalkableByHeightVue = true;
     }
     #endregion
 
@@ -663,8 +686,8 @@ public class GroundGeneratorWindow : EditorWindow
                 {
                     for (int x = 0; x < cellByLenghtChecker; x++)
                     {
-                        eventCell.Ground[indexCell] = checker[indexChecker].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].CellsInformation[x];
-                        eventCell.Ground[indexCell].CellContaint.Height = checker[indexChecker].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].Row[x];
+                        eventCell.Ground[indexCell] = checker[indexChecker].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].CellsInformation[x];
+                        eventCell.Ground[indexCell].CellContaint.Height = checker[indexChecker].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].Row[x];
                         indexCell++;
                     }
                 }
@@ -698,8 +721,9 @@ public class GroundGeneratorWindow : EditorWindow
                     indexCurrentGroundOnTheHeight = Mathf.Abs(y - checkerOnTheHeight);
 
                     currentGround = checker[index];
+                    indexCurrentChecker = index;
                     Selection.activeGameObject = currentGround;
-                    currentHeightGround = currentGround.GetComponent<GroundBaseGenerator>().HeightChecker;
+                    currentHeightGround = currentGround.GetComponent<GroundBaseGenerator>().MapDefinition;
                     skinCheckerVue = false;
                 }
                 index++;
@@ -844,8 +868,8 @@ public class GroundGeneratorWindow : EditorWindow
                     if (!paintMode)
                     {
                         EditorGUI.DrawRect(cellButtonRect, backgroundColor);
-                        currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].Row[x] =
-                            EditorGUI.FloatField(cellFieldRect, currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].Row[x], field);
+                        currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].Row[x] =
+                            EditorGUI.FloatField(cellFieldRect, currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].Row[x], field);
                     }
 
                     if (paintMode)
@@ -855,7 +879,7 @@ public class GroundGeneratorWindow : EditorWindow
                         else
                             EditorGUI.DrawRect(cellButtonRect, backgroundColor);
 
-                        GUI.Label(cellFieldRect, "" + currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].Row[x], field);
+                        GUI.Label(cellFieldRect, "" + currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].Row[x], field);
 
                         if (mouseClicked)
                         {
@@ -864,12 +888,12 @@ public class GroundGeneratorWindow : EditorWindow
                                 if (!valueChoice)
                                 {
                                     valueChoice = true;
-                                    paintValue = currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].Row[x];
+                                    paintValue = currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].Row[x];
                                 }
                                 else if (valueChoice && !cellPaint.Contains(new Vector2(y, x)))
                                 {
                                     cellPaint.Add(new Vector2(y, x));
-                                    currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].Row[x] = paintValue;
+                                    currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].Row[x] = paintValue;
                                     Repaint();
                                 }
                             }
@@ -895,7 +919,7 @@ public class GroundGeneratorWindow : EditorWindow
                             if (cellButtonRect.Contains(Event.current.mousePosition) && cellButtonRect.position != lastCellPos)
                             {
                                 lastCellPos = cellButtonRect.position;
-                                currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.Walkable = walkableMode;
+                                currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.Walkable = walkableMode;
                                 Repaint();
                             }
                         }
@@ -904,23 +928,23 @@ public class GroundGeneratorWindow : EditorWindow
                             if (cellButtonRect.Contains(Event.current.mousePosition) && cellButtonRect.position != lastCellPos)
                             {
                                 lastCellPos = cellButtonRect.position;
-                                currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut = currentGroundElement;
+                                currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut = currentGroundElement;
                                 Repaint();
                             }
                         }
                     }
 
-                    if (!currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.Walkable)
+                    if (!currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.Walkable)
                         EditorGUI.DrawRect(cellButtonRect, Color.black);
-                    else if (currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Earth)
+                    else if (currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Earth)
                         EditorGUI.DrawRect(cellButtonRect, browColor);
-                    else if (currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Ice)
+                    else if (currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Ice)
                         EditorGUI.DrawRect(cellButtonRect, Color.cyan);
-                    else if (currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Fire)
+                    else if (currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Fire)
                         EditorGUI.DrawRect(cellButtonRect, Color.red);
-                    else if (currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Water)
+                    else if (currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Water)
                         EditorGUI.DrawRect(cellButtonRect, Color.blue);
-                    else if (currentHeightGround.HeightGroundData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Sand)
+                    else if (currentHeightGround.MapRowsData[Mathf.Abs(y - cellByLenghtChecker)].CellsInformation[x].CellContaint.GroundAtribut == Cell.GroundElement.Sand)
                         EditorGUI.DrawRect(cellButtonRect, Color.yellow);
                     else
                         EditorGUI.DrawRect(cellButtonRect, borderColor);
@@ -957,8 +981,7 @@ public class GroundGeneratorWindow : EditorWindow
         Rect backgroundFielRect = new Rect(borderFielRect.x + 100, borderFielRect.y + 3, 117, 14);
         EditorGUI.DrawRect(backgroundFielRect, backgroundColor);
 
-        borderFielRect.x += 3;
-        borderFielRect.y += 3;
+        Displacementfield(borderFielRect, true);
         GUI.Label(borderFielRect, "Flatten Value");
 
         backgroundFielRect.x += 3;
@@ -982,7 +1005,6 @@ public class GroundGeneratorWindow : EditorWindow
             skinFlattenVue = false;
             skinFlattenAllVue = false;
         }
-
     }
 
     void FlattenPainterEditor()
@@ -1004,7 +1026,7 @@ public class GroundGeneratorWindow : EditorWindow
                 for (int w = 0; w < cellByLenghtChecker; w++)
                     for (int z = 0; z < cellByLenghtChecker; z++)
                     {
-                        groundModifyByFlattenPainter[i].HeightChecker.HeightGroundData[w].Row[z] = flattenValueChecker[i];
+                        groundModifyByFlattenPainter[i].MapDefinition.MapRowsData[w].Row[z] = flattenValueChecker[i];
                     }
             }
 
@@ -1212,7 +1234,7 @@ public class GroundGeneratorWindow : EditorWindow
         }
     }
 
-    void SkinAssetEditor()
+    void AssetEditor()
     {
         Rect verticalToolBar = new Rect(0, 18, 53, position.size.y);//////
         EditorGUI.DrawRect(verticalToolBar, borderColor);
@@ -1283,22 +1305,22 @@ public class GroundGeneratorWindow : EditorWindow
                 {
                     if (cellRect.Contains(Event.current.mousePosition))
                     {
-                        if (mouseClicked && currentAsset && currentHeightGround.HeightGroundData[y].PreviewCell[x] != currentAssetPreview)
+                        if (mouseClicked && currentAsset && currentHeightGround.MapRowsData[y].PreviewCell[x] != currentAssetPreview)
                         {
-                            if (currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript)
-                                DestroyImmediate(currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript.gameObject);
+                            if (currentHeightGround.MapRowsData[y].CellsInformation[x].CellContaint.EventScript)
+                                DestroyImmediate(currentHeightGround.MapRowsData[y].CellsInformation[x].CellContaint.EventScript.gameObject);
 
-                            currentHeightGround.HeightGroundData[y].PreviewCell[x] = currentAssetPreview;
+                            currentHeightGround.MapRowsData[y].PreviewCell[x] = currentAssetPreview;
 
                             Vector3 cellPos =
                                 new Vector3(x + (cellByLenghtChecker * indexCurrentGroundOnTheLenght) + .5f,
-                                currentHeightGround.HeightGroundData[y].Row[x] + assetFoot[currentAssetIndex],
+                                currentHeightGround.MapRowsData[y].Row[x] + assetFoot[currentAssetIndex],
                                 y + (cellByLenghtChecker * indexCurrentGroundOnTheHeight) + .5f);
 
                             GameObject newObject = GameObject.Instantiate<GameObject>(currentAsset, cellPos, Quaternion.identity, currentGround.transform);
 
-                            currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript = newObject.GetComponent<EventCell>();
-                            currentHeightGround.HeightGroundData[y].FootPos[x] = assetFoot[currentAssetIndex];
+                            currentHeightGround.MapRowsData[y].CellsInformation[x].CellContaint.EventScript = newObject.GetComponent<EventCell>();
+                            currentHeightGround.MapRowsData[y].FootPos[x] = assetFoot[currentAssetIndex];
                             Repaint();
                         }
                     }
@@ -1308,26 +1330,65 @@ public class GroundGeneratorWindow : EditorWindow
                 #region Eraser Mode
                 else
                 {
-                    if (mouseClicked && cellRect.Contains(Event.current.mousePosition) && currentHeightGround.HeightGroundData[y].PreviewCell[x])
+                    if (mouseClicked && cellRect.Contains(Event.current.mousePosition) && currentHeightGround.MapRowsData[y].PreviewCell[x])
                     {
-                        currentHeightGround.HeightGroundData[y].PreviewCell[x] = null;
-                        DestroyImmediate(currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript.gameObject);
+                        currentHeightGround.MapRowsData[y].PreviewCell[x] = null;
+                        DestroyImmediate(currentHeightGround.MapRowsData[y].CellsInformation[x].CellContaint.EventScript.gameObject);
                         Repaint();
                     }
                 }
                 #endregion
 
                 #region rect draw
-                if (!currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript)
+                if (!currentHeightGround.MapRowsData[y].CellsInformation[x].CellContaint.EventScript)
                     EditorGUI.DrawRect(cellRect, borderColor);
                 else
-                    EditorGUI.DrawPreviewTexture(cellRect, currentHeightGround.HeightGroundData[y].PreviewCell[x]);
+                    EditorGUI.DrawPreviewTexture(cellRect, currentHeightGround.MapRowsData[y].PreviewCell[x]);
                 #endregion
 
                 cellRect.x += 5;
             }
         }
         #endregion
+    }
+
+    void UnwalkableCellByHeightEditor()
+    {
+        Rect backgroundBorderRect = new Rect(MidlePos(new Vector2(306, 156)), new Vector2(306, 156));
+        EditorGUI.DrawRect(backgroundBorderRect, borderColor);
+
+        Rect backgroundRect = new Rect(MidlePos(new Vector2(300, 150)), new Vector2(300, 150));
+        EditorGUI.DrawRect(backgroundRect, backgroundColor);
+
+        Rect labelRect = new Rect(backgroundRect);
+        labelRect.x += 20;
+        labelRect.y += 10;
+        GUI.Label(labelRect, "Unwalkable Editor", subtitle);
+
+        Rect borderFielRect = new Rect(labelRect.x + 20, labelRect.y + 30, labelRect.size.x - 80, 20);
+        EditorGUI.DrawRect(borderFielRect, borderColor);
+
+        Rect backgroundFielRect = new Rect(borderFielRect.x + 100, borderFielRect.y + 3, 117, 14);
+        EditorGUI.DrawRect(backgroundFielRect, backgroundColor);
+
+        Displacementfield(borderFielRect, true);
+        GUI.Label(borderFielRect, "Max Height");
+
+        backgroundFielRect.x += 3;
+        maxHeightWalkableValue = EditorGUI.FloatField(backgroundFielRect, maxHeightWalkableValue, field);
+
+        Rect buttonRect = new Rect(backgroundRect.x + 20, backgroundRect.y + 100, 100, 30);
+        if (GUI.Button(buttonRect, "Cancel"))
+        {
+            skinUnwalkableByHeightVue = false;
+        }
+
+        buttonRect.x += 160;
+        if (GUI.Button(buttonRect, "Apply"))
+        {
+            UnwalkableCellByHeight(maxHeightWalkableValue);
+            skinUnwalkableByHeightVue = false;
+        }
     }
 
     #endregion
@@ -1437,7 +1498,7 @@ public class GroundGeneratorWindow : EditorWindow
         for (int y = 0; y < cellByLenghtChecker; y++)
             for (int x = 0; x < cellByLenghtChecker; x++)
             {
-                currentHeightGround.HeightGroundData[y].Row[x] = flattenCellValueCheckboard;
+                currentHeightGround.MapRowsData[y].Row[x] = flattenCellValueCheckboard;
             }
     }
 
@@ -1448,7 +1509,7 @@ public class GroundGeneratorWindow : EditorWindow
             for (int y = 0; y < cellByLenghtChecker; y++)
                 for (int x = 0; x < cellByLenghtChecker; x++)
                 {
-                    heightCell.HeightGroundData[y].Row[x] = flattenCellValueCheckboard;
+                    heightCell.MapRowsData[y].Row[x] = flattenCellValueCheckboard;
                 }
         }
         RebuildAllGround();
@@ -1476,23 +1537,27 @@ public class GroundGeneratorWindow : EditorWindow
         for (int y = 0; y < checkerOnTheHeight; y++)
             for (int x = 0; x < checkerOnTheLenght; x++)
             {
+                #region Creation of the flatten ground
                 checker.Add(new GameObject());
                 checker[index].transform.parent = groundFolder.transform;
                 checker[index].name = "" + nameMap + " " + index;
                 GroundBaseGenerator groundScript = checker[index].AddComponent<GroundBaseGenerator>();
+                #endregion
 
+                #region Initialisation
                 groundScript.NumberCellByLenght = cell;
                 groundScript.Density = cellDensity;
                 if (!skinLoadGroundVue)
                 {
-                    groundScript.HeightChecker = new HeightGround();
-                    height.Add(groundScript.HeightChecker);
-                    groundScript.HeightChecker.InitialisationRowArray(cell - 1);
+                    groundScript.MapDefinition = new HeightGround();
+                    height.Add(groundScript.MapDefinition);
+                    groundScript.MapDefinition.InitialisationRowArray(cell - 1);//-1 because the array start at 0!
                 }
-                else
+                else//Load ?
                 {
-                    groundScript.HeightChecker = height[index];
+                    groundScript.MapDefinition = height[index];
                 }
+                #endregion
 
                 groundScript.GenerateGroundBase();
                 groundScript.IndexInTheCheckboard = index;
@@ -1522,7 +1587,7 @@ public class GroundGeneratorWindow : EditorWindow
             GroundBaseGenerator script = obj.GetComponent<GroundBaseGenerator>();
             script.NumberCellByLenght = cellByLenghtChecker + 1;
             script.Density = cellDensity;
-            script.HeightChecker.NewRowArray(cellByLenghtChecker);
+            script.MapDefinition.NewRowArray(cellByLenghtChecker);
             script.GenerateGroundBase();
         }
         #endregion
@@ -1549,8 +1614,8 @@ public class GroundGeneratorWindow : EditorWindow
                     GroundBaseGenerator script = newChecker.AddComponent<GroundBaseGenerator>();
                     script.NumberCellByLenght = cellByLenghtChecker + 1;
                     script.Density = cellDensity;
-                    script.HeightChecker = new HeightGround();
-                    script.HeightChecker.InitialisationRowArray(cellByLenghtChecker);
+                    script.MapDefinition = new HeightGround();
+                    script.MapDefinition.InitialisationRowArray(cellByLenghtChecker);
                     script.GenerateGroundBase();
 
                     newChecker.GetComponent<MeshRenderer>().material = CheckerMaterial;
@@ -1597,8 +1662,8 @@ public class GroundGeneratorWindow : EditorWindow
                     GroundBaseGenerator script = newChecker.AddComponent<GroundBaseGenerator>();
                     script.NumberCellByLenght = cellByLenghtChecker + 1;
                     script.Density = cellDensity;
-                    script.HeightChecker = new HeightGround();
-                    script.HeightChecker.InitialisationRowArray(cellByLenghtChecker);
+                    script.MapDefinition = new HeightGround();
+                    script.MapDefinition.InitialisationRowArray(cellByLenghtChecker);
                     script.GenerateGroundBase();
 
                     newChecker.GetComponent<MeshRenderer>().material = CheckerMaterial;
@@ -1654,7 +1719,7 @@ public class GroundGeneratorWindow : EditorWindow
                     if (index < (checkerOnTheLenght * (y + 1)) - 1)//3
                     {
                         ground.RightChecker = true;
-                        ground.RightHeight = checker[index + 1].GetComponent<GroundBaseGenerator>().HeightChecker;
+                        ground.RightHeight = checker[index + 1].GetComponent<GroundBaseGenerator>().MapDefinition;
                     }
                 }
                 else
@@ -1662,14 +1727,20 @@ public class GroundGeneratorWindow : EditorWindow
                     if (index + 1 < checkerOnTheLenght)
                     {
                         ground.RightChecker = true;
-                        ground.RightHeight = checker[index + 1].GetComponent<GroundBaseGenerator>().HeightChecker;
+                        ground.RightHeight = checker[index + 1].GetComponent<GroundBaseGenerator>().MapDefinition;
                     }
                 }
 
                 if (index + checkerOnTheLenght < checker.Count)
                 {
                     ground.TopChecker = true;
-                    ground.TopHeight = checker[index + checkerOnTheLenght].GetComponent<GroundBaseGenerator>().HeightChecker;
+                    ground.TopHeight = checker[index + checkerOnTheLenght].GetComponent<GroundBaseGenerator>().MapDefinition;
+                }
+
+                if(index + checkerOnTheLenght +1 < checker.Count && ground.RightChecker)
+                {
+                    ground.DiagonalChecker = true;
+                    ground.DiagonalHeight = checker[index + checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[0];
                 }
                 index++;
             }
@@ -1678,16 +1749,30 @@ public class GroundGeneratorWindow : EditorWindow
 
     void RebuildCurrentChecker()
     {
-        currentGround.GetComponent<GroundBaseGenerator>().GenerateGroundBase();
+        CalculateHeightBorder();
+        RebuildSpecificChecker(indexCurrentChecker);
+
+        if (indexCurrentChecker - 1 >= 0)
+            RebuildSpecificChecker(indexCurrentChecker - 1);
+
+        if(indexCurrentChecker - checkerOnTheLenght >= 0)
+            RebuildSpecificChecker(indexCurrentChecker - checkerOnTheLenght);
+    }
+
+    void RebuildSpecificChecker(int CheckerIndex)
+    {
+        checker[CheckerIndex].GetComponent<GroundBaseGenerator>().GenerateGroundBase();
+        HeightGround currentHeightGroundModify = checker[CheckerIndex].GetComponent<GroundBaseGenerator>().MapDefinition;
+
         for (int y = 0; y < cellByLenghtChecker; y++)
         {
             for (int x = 0; x < cellByLenghtChecker; x++)
             {
-                if (currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript)
+                if (currentHeightGroundModify.MapRowsData[y].CellsInformation[x].CellContaint.EventScript)
                 {
-                    GameObject obj = currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript.gameObject;
+                    GameObject obj = currentHeightGroundModify.MapRowsData[y].CellsInformation[x].CellContaint.EventScript.gameObject;
 
-                    obj.transform.position = new Vector3(obj.transform.position.x, currentHeightGround.HeightGroundData[y].Row[x] + currentHeightGround.HeightGroundData[y].FootPos[x], obj.transform.position.z);
+                    obj.transform.position = new Vector3(obj.transform.position.x, currentHeightGroundModify.MapRowsData[y].Row[x] + currentHeightGroundModify.MapRowsData[y].FootPos[x], obj.transform.position.z);
                 }
             }
         }
@@ -1708,12 +1793,12 @@ public class GroundGeneratorWindow : EditorWindow
             {
                 for (int x = 0; x < cellByLenghtChecker; x++)
                 {
-                    if (checker[index].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript)
+                    if (checker[index].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].CellsInformation[x].CellContaint.EventScript)
                     {
-                        GameObject obj = checker[index].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].CellsInformation[x].CellContaint.EventScript.gameObject;
+                        GameObject obj = checker[index].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].CellsInformation[x].CellContaint.EventScript.gameObject;
 
                         obj.transform.position = new Vector3(obj.transform.position.x,
-                            checker[index].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].Row[x] + checker[index].GetComponent<GroundBaseGenerator>().HeightChecker.HeightGroundData[y].FootPos[x],
+                            checker[index].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].Row[x] + checker[index].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].FootPos[x],
                             obj.transform.position.z);
                     }
                 }
@@ -1804,7 +1889,7 @@ public class GroundGeneratorWindow : EditorWindow
         height.Clear();//Recreat the height list (use for the save and for the flatten
         for (int i = 0; i < checker.Count;i++)
         {
-            height.Add(checker[i].GetComponent<GroundBaseGenerator>().HeightChecker);
+            height.Add(checker[i].GetComponent<GroundBaseGenerator>().MapDefinition);
         }
 
         groundCreat = true;
@@ -1827,20 +1912,41 @@ public class GroundGeneratorWindow : EditorWindow
     #endregion
 
     #region Cell
+    /// <summary>
+    /// Put all current cell Walkable bool in true
+    /// </summary>
     void FlattenWalkableCell()
     {
         for (int y = 0; y < cellByLenghtChecker; y++)
             for (int x = 0; x < cellByLenghtChecker; x++)
             {
-                currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.Walkable = true;
-                currentHeightGround.HeightGroundData[y].CellsInformation[x].CellContaint.GroundAtribut = Cell.GroundElement.Earth;
+                currentHeightGround.MapRowsData[y].CellsInformation[x].CellContaint.Walkable = true;
+                currentHeightGround.MapRowsData[y].CellsInformation[x].CellContaint.GroundAtribut = Cell.GroundElement.Earth;
             }
         Repaint();
     }
 
-    void GroundMode(Cell.GroundElement Mode)
+    void UnwalkableCellByHeight(float height)
     {
-        currentGroundElement = Mode;
+        
+        for(int i = 0; i < checker.Count; i++)
+        {
+            for (int line = 0; line < cellByLenghtChecker; line++)
+            {
+                for(int row = 0; row < cellByLenghtChecker; row ++)
+                {
+                    if(checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].Row[row] > height)
+                    {
+                        checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].CellsInformation[row].CellContaint.Walkable = false;
+                    }
+                    else if(checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].Row[row] < height)
+                    {
+                        checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].CellsInformation[row].CellContaint.Walkable = true;
+                    }
+                }
+            }
+        }
+        Repaint();
     }
     #endregion
 

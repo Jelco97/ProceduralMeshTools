@@ -4,15 +4,18 @@ using UnityEngine;
 
 public class GroundBaseGenerator : MonoBehaviour
 {
-    public HeightGround HeightChecker;
+    public bool SmoothStepSlope = true;
+    public HeightGround MapDefinition;
     public int Density = 1;
     public int NumberCellByLenght = 10;
     public int IndexInTheCheckboard;
 
     public bool TopChecker;
     public bool RightChecker;
+    public bool DiagonalChecker;
     public HeightGround TopHeight;
     public HeightGround RightHeight;
+    public float DiagonalHeight;
 
     public float RedColorByHeight;
     public float GreenColorByHeight;
@@ -40,46 +43,90 @@ public class GroundBaseGenerator : MonoBehaviour
         #endregion
 
         int index = 0;
-        for (float zPos = 0f; zPos < numSideQuad + 1; zPos++)
-            for (float xPos = 0f; xPos < numSideQuad + 1; xPos++)
+        for (float z = 0f; z < numSideQuad + 1; z++)
+            for (float x = 0f; x < numSideQuad + 1; x++)
             {
                 Vector3 positionVertex = new Vector3();
-                positionVertex.z = (zPos / Density);
-                positionVertex.x = (xPos / Density);
+                positionVertex.z = (z / Density);
+                positionVertex.x = (x / Density);
 
-                int Xindex = Mathf.FloorToInt(xPos / Density);
-                if (Xindex == NumberCellByLenght - 1)
+                if(!SmoothStepSlope)
                 {
-                    if (RightChecker)
-                        rightChecker = true;
-                    Xindex--;
+                    int Xindex = Mathf.FloorToInt(x / Density);
+                    if (Xindex == NumberCellByLenght - 1)
+                    {
+                        if (RightChecker)
+                            rightChecker = true;
+                        Xindex--;
+                    }
+
+                    int Zindex = Mathf.FloorToInt(z / Density);
+                    if (Zindex == NumberCellByLenght - 1)
+                    {
+                        if (TopChecker)
+                            topChecker = true;
+                        Zindex--;
+                    }
+
+                    float height = 0;
+                    if (!topChecker && !rightChecker)
+                        height = MapDefinition.MapRowsData[Zindex].Row[Xindex];
+
+                    else if (topChecker && !rightChecker)
+                        height = TopHeight.MapRowsData[0].Row[Xindex];
+
+                    else if (rightChecker && !topChecker)
+                        height = RightHeight.MapRowsData[Zindex].Row[0];
+                    else if (TopChecker && rightChecker && DiagonalChecker)
+                        height = DiagonalHeight;
+
+                    topChecker = false;
+                    rightChecker = false;
+
+                    positionVertex.y = height;
                 }
 
-                int Zindex = Mathf.FloorToInt(zPos / Density);
-                if (Zindex == NumberCellByLenght - 1)
+                else
                 {
-                    if (TopChecker)
-                        topChecker = true;
-                    Zindex--;
+                    float fxPos = (x + 0.5f) / Density;
+                    float fzPos = (z + 0.5f) / Density;
+                    int xPos = Mathf.FloorToInt(fxPos);
+                    int zPos = Mathf.FloorToInt(fzPos);
+                    float fracXPos = fxPos - xPos;
+                    float fracZPos = fzPos - zPos;
+
+                    float height = MapDefinition.MapRowsData[xPos].Distance[zPos];
+
+                    float heightL = MapDefinition.MapRowsData[Mathf.Max(0, xPos - 1)].Distance[zPos];
+                    float heightR = MapDefinition.MapRowsData[Mathf.Min(9, xPos + 1)].Distance[zPos];
+                    float heightU = MapDefinition.MapRowsData[xPos].Distance[Mathf.Max(0, zPos - 1)];
+                    float heightD = MapDefinition.MapRowsData[xPos].Distance[Mathf.Min(9, zPos + 1)];
+
+                    float minHeightLU = Mathf.Min(Mathf.Min(Mathf.Min(heightL, heightU),
+                        MapDefinition.MapRowsData[Mathf.Max(0, xPos - 1)].Distance[Mathf.Max(0, zPos - 1)]),
+                        height);
+                    float minHeightRU = Mathf.Min(Mathf.Min(Mathf.Min(heightR, heightU),
+                        MapDefinition.MapRowsData[Mathf.Min(9, xPos + 1)].Distance[Mathf.Max(0, zPos - 1)]),
+                        height);
+                    float minHeightLD = Mathf.Min(Mathf.Min(Mathf.Min(heightL, heightD),
+                        MapDefinition.MapRowsData[Mathf.Max(0, xPos - 1)].Distance[Mathf.Min(9, zPos + 1)]),
+                        height);
+                    float minHeightRD = Mathf.Min(Mathf.Min(Mathf.Min(heightR, heightD),
+                        MapDefinition.MapRowsData[Mathf.Min(9, xPos + 1)].Distance[Mathf.Min(9, zPos + 1)]),
+                        height);
+
+                    float heightBlendU = Mathf.Lerp(minHeightLU, minHeightRU, fracXPos);
+                    float heightBlendD = Mathf.Lerp(minHeightLD, minHeightRD, fracXPos);
+                    float heightBlend = Mathf.Lerp(heightBlendU, heightBlendD, fracZPos);
+
+                    if (height == 0)
+                        positionVertex.y = 0.0f;
+                    else
+                        positionVertex.y = heightBlend;
                 }
 
-                float height = 0;
-                if (!topChecker && !rightChecker)
-                    height = HeightChecker.HeightGroundData[Zindex].Row[Xindex];
-
-                else if (topChecker)
-                    height = TopHeight.HeightGroundData[0].Row[Xindex];
-
-                else if (rightChecker)
-                    height = RightHeight.HeightGroundData[Zindex].Row[0];
-
-                topChecker = false;
-                rightChecker = false;
-
-                positionVertex.y = height;
-
-                vertexColor[index] = VertexColorByHeight(height);
-                uv[index] = new Vector2(xPos / (numSideQuad + 1), zPos / (numSideQuad + 1));
+                vertexColor[index] = VertexColorByHeight(positionVertex.y);
+                uv[index] = new Vector2(x / (numSideQuad + 1), z / (numSideQuad + 1));
                 vertices[index++] = positionVertex;
             }
 
@@ -125,7 +172,7 @@ public class GroundBaseGenerator : MonoBehaviour
 
     public void CleanHeightTab()
     {
-        HeightChecker.CleanHeight();
+        MapDefinition.CleanHeight();
     }
 
     /// <summary>
