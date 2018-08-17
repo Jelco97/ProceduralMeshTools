@@ -1022,7 +1022,7 @@ public class GroundGeneratorWindow : EditorWindow
             {
                 if (!groundModifyByFlattenPainter[i])
                     continue;
-                
+
                 for (int w = 0; w < cellByLenghtChecker; w++)
                     for (int z = 0; z < cellByLenghtChecker; z++)
                     {
@@ -1532,7 +1532,7 @@ public class GroundGeneratorWindow : EditorWindow
 
         }
 
-        int cell = cellByLenghtChecker + 1;
+        int cell = cellByLenghtChecker;
         int index = 0;
         for (int y = 0; y < checkerOnTheHeight; y++)
             for (int x = 0; x < checkerOnTheLenght; x++)
@@ -1551,7 +1551,7 @@ public class GroundGeneratorWindow : EditorWindow
                 {
                     groundScript.MapDefinition = new HeightGround();
                     height.Add(groundScript.MapDefinition);
-                    groundScript.MapDefinition.InitialisationRowArray(cell - 1);//-1 because the array start at 0!
+                    groundScript.MapDefinition.InitialisationRowArray(cell);
                 }
                 else//Load ?
                 {
@@ -1570,7 +1570,8 @@ public class GroundGeneratorWindow : EditorWindow
         flattenValueChecker = new float[checker.Count];//Use to write the value of the checker after flatten
         groundModifyByFlattenPainter = new GroundBaseGenerator[checker.Count];
 
-        CalculateHeightBorder();//Calculate the height of the top and the right
+        InitialisationBorderArray();//Initialisation of the size array
+        CalculateHeightBorder();//Calculate the eatch border checker
         ApplyVertexColor();//Calculate the vertex color and build after
 
         groundCreat = true;
@@ -1585,11 +1586,15 @@ public class GroundGeneratorWindow : EditorWindow
         foreach (GameObject obj in checker)
         {
             GroundBaseGenerator script = obj.GetComponent<GroundBaseGenerator>();
-            script.NumberCellByLenght = cellByLenghtChecker + 1;
+            script.NumberCellByLenght = cellByLenghtChecker;
             script.Density = cellDensity;
             script.MapDefinition.NewRowArray(cellByLenghtChecker);
-            script.GenerateGroundBase();
         }
+
+        CalculateHeightBorder();
+
+        foreach (GameObject obj in checker)
+            obj.GetComponent<GroundBaseGenerator>().GenerateGroundBase();
         #endregion
 
         #region Checker
@@ -1612,7 +1617,7 @@ public class GroundGeneratorWindow : EditorWindow
                     newChecker.name = "Extended Checker" + (indexCheckerOnTheLenghtPos + x);
 
                     GroundBaseGenerator script = newChecker.AddComponent<GroundBaseGenerator>();
-                    script.NumberCellByLenght = cellByLenghtChecker + 1;
+                    script.NumberCellByLenght = cellByLenghtChecker;
                     script.Density = cellDensity;
                     script.MapDefinition = new HeightGround();
                     script.MapDefinition.InitialisationRowArray(cellByLenghtChecker);
@@ -1660,7 +1665,7 @@ public class GroundGeneratorWindow : EditorWindow
                     newChecker.name = "Extended Checker" + checker.Count;
 
                     GroundBaseGenerator script = newChecker.AddComponent<GroundBaseGenerator>();
-                    script.NumberCellByLenght = cellByLenghtChecker + 1;
+                    script.NumberCellByLenght = cellByLenghtChecker;
                     script.Density = cellDensity;
                     script.MapDefinition = new HeightGround();
                     script.MapDefinition.InitialisationRowArray(cellByLenghtChecker);
@@ -1684,6 +1689,7 @@ public class GroundGeneratorWindow : EditorWindow
             }
         }
 
+        InitialisationBorderArray();
         CalculateHeightBorder();
 
         RebuildAllGround();
@@ -1702,8 +1708,20 @@ public class GroundGeneratorWindow : EditorWindow
         #endregion
     }
 
+    void InitialisationBorderArray()
+    {
+        for(int i = 0; i < checker.Count; i++)
+        {
+            GroundBaseGenerator scriptGround = checker[i].GetComponent<GroundBaseGenerator>();
+            scriptGround.RightHeight = new float[cellByLenghtChecker];
+            scriptGround.LeftHeight = new float[cellByLenghtChecker];
+            scriptGround.TopHeight = new float[cellByLenghtChecker];
+            scriptGround.BotHeight = new float[cellByLenghtChecker];
+        }
+    }
+
     /// <summary>
-    /// Calculate the height of the top and the right of all checker
+    /// Calculate the height of eatch border checker
     /// </summary>
     void CalculateHeightBorder()
     {
@@ -1714,34 +1732,118 @@ public class GroundGeneratorWindow : EditorWindow
             {
                 GroundBaseGenerator ground = checker[index].GetComponent<GroundBaseGenerator>();
 
-                if (y != 0)
+                #region Right
+                if (y != 0 && index < (checkerOnTheLenght * (y + 1)) - 1)//Right after first column
+                    ground.RightChecker = true;
+                else if(y == 0 && index + 1 < checkerOnTheLenght)//Right in first column
+                    ground.RightChecker = true;
+                
+                if(ground.RightChecker)
                 {
-                    if (index < (checkerOnTheLenght * (y + 1)) - 1)//3
+                    GroundBaseGenerator scriptGround = checker[index + 1].GetComponent<GroundBaseGenerator>();//Right checker
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.RightHeight[i] = scriptGround.MapDefinition.MapRowsData[i].Row[0];
+                }
+                else
+                {
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.RightHeight[i] = ground.MapDefinition.MapRowsData[i].Row[cellByLenghtChecker-1];
+                }
+                #endregion
+                
+                #region Left
+                if (y != 0 && index - 1 >= (checkerOnTheLenght * y)) //left after first column
+                    ground.LeftChecker = true;
+                else if (y == 0 && index - 1 >= 0)//left in first column
+                    ground.LeftChecker = true;
+                
+                if(ground.LeftChecker)
+                {
+                    GroundBaseGenerator scriptGround = checker[index - 1].GetComponent<GroundBaseGenerator>();
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.LeftHeight[i] = scriptGround.MapDefinition.MapRowsData[i].Row[cellByLenghtChecker - 1];
+                }
+                else
+                {
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.LeftHeight[i] = ground.MapDefinition.MapRowsData[i].Row[0];
+                }
+                #endregion
+
+                #region Top
+                if (index + checkerOnTheLenght < checker.Count)//top
+                {
+                    ground.TopChecker = true;
+                    GroundBaseGenerator scriptGround = checker[index + checkerOnTheLenght].GetComponent<GroundBaseGenerator>();
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.TopHeight[i] = scriptGround.MapDefinition.MapRowsData[0].Row[i];
+                }
+                else//if no top, use same value
+                {
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.TopHeight[i] = ground.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[i];
+                }
+                #endregion
+
+                #region Bot
+                if (index - checkerOnTheLenght >= 0)//bot
+                {
+                    ground.BotChecker = true;
+                    GroundBaseGenerator scriptGround = checker[index - checkerOnTheLenght].GetComponent<GroundBaseGenerator>();
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.BotHeight[i] = scriptGround.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[i];
+                }
+                else//if no bot, use same value
+                {
+                    for (int i = 0; i < cellByLenghtChecker; i++)
+                        ground.BotHeight[i] = ground.MapDefinition.MapRowsData[0].Row[i];
+                }
+                #endregion
+
+                #region Diagonal Top Right and Top Left
+                if (ground.TopChecker)//diagonal Top
+                {
+                    if (ground.RightChecker)//Top right
                     {
-                        ground.RightChecker = true;
-                        ground.RightHeight = checker[index + 1].GetComponent<GroundBaseGenerator>().MapDefinition;
+                        ground.DiagonalRightTopChecker = true;
+                        ground.DiagonalRightTopHeight = checker[index + checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[0];
+                    }
+
+                    if (ground.LeftChecker)//Top left
+                    {
+                        ground.DiagonalLeftTopChecker = true;
+                        ground.DiagonalLeftTopHeight = checker[index + checkerOnTheLenght - 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[cellByLenghtChecker - 1];
                     }
                 }
                 else
                 {
-                    if (index + 1 < checkerOnTheLenght)
+                    ground.DiagonalRightTopHeight = ground.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[cellByLenghtChecker - 1];//Top right
+                    ground.DiagonalLeftTopHeight = ground.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[0];//Top left
+                }
+                #endregion
+
+                #region Diagonal Bot Right and Bot Left
+                if (ground.BotChecker)//diagonal
+                {
+                    if (ground.RightChecker)//Bot Right
                     {
-                        ground.RightChecker = true;
-                        ground.RightHeight = checker[index + 1].GetComponent<GroundBaseGenerator>().MapDefinition;
+                        ground.DiagonalRightBotChecker = true;
+                        ground.DiagonalRightBotHeight = checker[index - checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[0];
+                    }
+
+                    if (ground.LeftChecker)//Bot Left
+                    {
+                        ground.DiagonalLeftBotChecker = true;
+                        ground.DiagonalLeftBotHeight = checker[index - checkerOnTheLenght - 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[cellByLenghtChecker - 1];
                     }
                 }
-
-                if (index + checkerOnTheLenght < checker.Count)
+                else
                 {
-                    ground.TopChecker = true;
-                    ground.TopHeight = checker[index + checkerOnTheLenght].GetComponent<GroundBaseGenerator>().MapDefinition;
+                    ground.DiagonalRightBotHeight = ground.MapDefinition.MapRowsData[0].Row[cellByLenghtChecker - 1];//Right Bot
+                    ground.DiagonalLeftBotHeight = ground.MapDefinition.MapRowsData[0].Row[0];//Left Bot
                 }
+                #endregion
 
-                if(index + checkerOnTheLenght +1 < checker.Count && ground.RightChecker)
-                {
-                    ground.DiagonalChecker = true;
-                    ground.DiagonalHeight = checker[index + checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[0];
-                }
                 index++;
             }
         }
@@ -1755,7 +1857,7 @@ public class GroundGeneratorWindow : EditorWindow
         if (indexCurrentChecker - 1 >= 0)
             RebuildSpecificChecker(indexCurrentChecker - 1);
 
-        if(indexCurrentChecker - checkerOnTheLenght >= 0)
+        if (indexCurrentChecker - checkerOnTheLenght >= 0)
             RebuildSpecificChecker(indexCurrentChecker - checkerOnTheLenght);
     }
 
@@ -1866,7 +1968,7 @@ public class GroundGeneratorWindow : EditorWindow
             vertexColorGreenValue = checker[0].GetComponent<GroundBaseGenerator>().GreenColorByHeight;
             vertexColorBlueValue = checker[0].GetComponent<GroundBaseGenerator>().BlueColorByHeight;
 
-            cellByLenghtChecker = checker[0].GetComponent<GroundBaseGenerator>().NumberCellByLenght - 1;
+            cellByLenghtChecker = checker[0].GetComponent<GroundBaseGenerator>().NumberCellByLenght;
             cellDensity = checker[0].GetComponent<GroundBaseGenerator>().Density;
             checkerOnTheLenght = 0;
             checkerOnTheHeight = 0;
@@ -1887,7 +1989,7 @@ public class GroundGeneratorWindow : EditorWindow
         groundModifyByFlattenPainter = new GroundBaseGenerator[checker.Count];
 
         height.Clear();//Recreat the height list (use for the save and for the flatten
-        for (int i = 0; i < checker.Count;i++)
+        for (int i = 0; i < checker.Count; i++)
         {
             height.Add(checker[i].GetComponent<GroundBaseGenerator>().MapDefinition);
         }
@@ -1928,18 +2030,18 @@ public class GroundGeneratorWindow : EditorWindow
 
     void UnwalkableCellByHeight(float height)
     {
-        
-        for(int i = 0; i < checker.Count; i++)
+
+        for (int i = 0; i < checker.Count; i++)
         {
             for (int line = 0; line < cellByLenghtChecker; line++)
             {
-                for(int row = 0; row < cellByLenghtChecker; row ++)
+                for (int row = 0; row < cellByLenghtChecker; row++)
                 {
-                    if(checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].Row[row] > height)
+                    if (checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].Row[row] > height)
                     {
                         checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].CellsInformation[row].CellContaint.Walkable = false;
                     }
-                    else if(checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].Row[row] < height)
+                    else if (checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].Row[row] < height)
                     {
                         checker[i].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[line].CellsInformation[row].CellContaint.Walkable = true;
                     }

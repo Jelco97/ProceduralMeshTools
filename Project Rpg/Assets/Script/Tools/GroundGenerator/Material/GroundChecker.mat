@@ -4,7 +4,7 @@
 Material:
   serializedVersion: 6
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: GroundChecker
   m_Shader: {fileID: 4800000, guid: 1ef9128e4c2bbba44b1bc3437b6df2f6, type: 3}
@@ -57,7 +57,7 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _Cutoff: 0.5
-    - _Density: 10.25
+    - _Density: 11
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _GlossMapScale: 1

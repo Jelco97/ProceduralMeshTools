@@ -8,10 +8,22 @@ public class HeightGround
     [System.Serializable]
     public struct MapRowData
     {
+        /// <summary>
+        /// Height in the cell
+        /// </summary>
         public float[] Row;//position dans la ranger
-        public float[] Distance;
+        //public float[] Distance;
+        /// <summary>
+        /// The cell store in this index
+        /// </summary>
         public Cell[] CellsInformation;
+        /// <summary>
+        /// The image of the object in the custom vue
+        /// </summary>
         public Texture2D[] PreviewCell;
+        /// <summary>
+        /// The pos of the foot of the object in this cell
+        /// </summary>
         public float[] FootPos;
     }
 
@@ -67,6 +79,9 @@ public class HeightGround
         {
             newAray[x].Row = new float[i];
             newAray[x].CellsInformation = new Cell[i];
+            newAray[x].PreviewCell = new Texture2D[i];
+            newAray[x].FootPos = new float[i];
+
             for (int index = 0; index < i; index++)
             {
                 newAray[x].CellsInformation[index] = new Cell();
@@ -101,12 +116,14 @@ public class HeightGround
             {
                 if (MapRowsData[i].CellsInformation[x].CellContaint.EventScript)
                     GameObject.DestroyImmediate(MapRowsData[i].CellsInformation[x].CellContaint.EventScript.gameObject);
-                MapRowsData[i].PreviewCell[x] = null;
+                if (MapRowsData[i].PreviewCell[x])
+                    MapRowsData[i].PreviewCell[x] = null;
                 MapRowsData[i].FootPos[x] = 0;
             }
         }
     }
 
+    /*
     private float GetDistance(int x, int y)
     {
         if (x < 0 || x > 9 || y < 0 || y > 9)//the cell evaluate is in the checker ?
@@ -141,4 +158,5 @@ public class HeightGround
                     }
                 }
     }
+    */
 }
