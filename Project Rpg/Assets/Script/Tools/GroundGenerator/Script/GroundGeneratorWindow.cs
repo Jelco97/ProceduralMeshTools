@@ -1717,6 +1717,8 @@ public class GroundGeneratorWindow : EditorWindow
             scriptGround.LeftHeight = new float[cellByLenghtChecker];
             scriptGround.TopHeight = new float[cellByLenghtChecker];
             scriptGround.BotHeight = new float[cellByLenghtChecker];
+            scriptGround.InterpolateLeftHeightValue = new float[cellByLenghtChecker * cellDensity+1];
+            scriptGround.InterpolateBotHeightValue = new float[cellByLenghtChecker * cellDensity+1];
         }
     }
 
@@ -1741,6 +1743,8 @@ public class GroundGeneratorWindow : EditorWindow
                 if(ground.RightChecker)
                 {
                     GroundBaseGenerator scriptGround = checker[index + 1].GetComponent<GroundBaseGenerator>();//Right checker
+                    ground.RightGroundGenrator = scriptGround;
+
                     for (int i = 0; i < cellByLenghtChecker; i++)
                         ground.RightHeight[i] = scriptGround.MapDefinition.MapRowsData[i].Row[0];
                 }
@@ -1775,6 +1779,7 @@ public class GroundGeneratorWindow : EditorWindow
                 {
                     ground.TopChecker = true;
                     GroundBaseGenerator scriptGround = checker[index + checkerOnTheLenght].GetComponent<GroundBaseGenerator>();
+                    ground.TopGroundGenerator = scriptGround;
                     for (int i = 0; i < cellByLenghtChecker; i++)
                         ground.TopHeight[i] = scriptGround.MapDefinition.MapRowsData[0].Row[i];
                 }
