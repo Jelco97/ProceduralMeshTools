@@ -1801,25 +1801,21 @@ public class GroundGeneratorWindow : EditorWindow
                 #endregion
 
                 #region Diagonal Top Right and Top Left
-                if (ground.TopChecker)//diagonal Top
+                if (ground.RightChecker && ground.TopChecker)//Top right
                 {
-                    if (ground.RightChecker)//Top right
-                    {
-                        ground.DiagonalRightTopChecker = true;
-                        ground.DiagonalRightTopHeight = checker[index + checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[0];
-                    }
-
-                    if (ground.LeftChecker)//Top left
-                    {
-                        ground.DiagonalLeftTopChecker = true;
-                        ground.DiagonalLeftTopHeight = checker[index + checkerOnTheLenght - 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[cellByLenghtChecker - 1];
-                    }
+                    ground.DiagonalRightTopChecker = true;
+                    ground.DiagonalRightTopHeight = checker[index + checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[0];
                 }
                 else
-                {
                     ground.DiagonalRightTopHeight = ground.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[cellByLenghtChecker - 1];//Top right
-                    ground.DiagonalLeftTopHeight = ground.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[0];//Top left
+
+                if (ground.LeftChecker && ground.TopChecker)//Top left
+                {
+                    ground.DiagonalLeftTopChecker = true;
+                    ground.DiagonalLeftTopHeight = checker[index + checkerOnTheLenght - 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[0].Row[cellByLenghtChecker - 1];
                 }
+                else
+                    ground.DiagonalLeftTopHeight = ground.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[0];//Top left
                 #endregion
 
                 #region Diagonal Bot Right and Bot Left
@@ -1861,6 +1857,10 @@ public class GroundGeneratorWindow : EditorWindow
             RebuildSpecificChecker(indexCurrentChecker - checkerOnTheLenght);
     }
 
+    /// <summary>
+    /// Rebuild the checker in the array checker
+    /// </summary>
+    /// <param name="CheckerIndex"></param>
     void RebuildSpecificChecker(int CheckerIndex)
     {
         checker[CheckerIndex].GetComponent<GroundBaseGenerator>().GenerateGroundBase();
