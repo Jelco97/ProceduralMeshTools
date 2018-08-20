@@ -1559,11 +1559,10 @@ public class GroundGeneratorWindow : EditorWindow
                 }
                 #endregion
 
-                groundScript.GenerateGroundBase();
                 groundScript.IndexInTheCheckboard = index;
 
                 checker[index].transform.position = new Vector3(x * cellByLenghtChecker, 0, y * cellByLenghtChecker);
-                checker[index].GetComponent<MeshRenderer>().material = CheckerMaterial;
+
                 index++;
             }
 
@@ -1573,6 +1572,11 @@ public class GroundGeneratorWindow : EditorWindow
         InitialisationBorderArray();//Initialisation of the size array
         CalculateHeightBorder();//Calculate the eatch border checker
         ApplyVertexColor();//Calculate the vertex color and build after
+
+        foreach (GameObject script in checker)
+        {
+            script.GetComponent<MeshRenderer>().material = CheckerMaterial;
+        }
 
         groundCreat = true;
     }
@@ -1710,15 +1714,15 @@ public class GroundGeneratorWindow : EditorWindow
 
     void InitialisationBorderArray()
     {
-        for(int i = 0; i < checker.Count; i++)
+        for (int i = 0; i < checker.Count; i++)
         {
             GroundBaseGenerator scriptGround = checker[i].GetComponent<GroundBaseGenerator>();
             scriptGround.RightHeight = new float[cellByLenghtChecker];
             scriptGround.LeftHeight = new float[cellByLenghtChecker];
             scriptGround.TopHeight = new float[cellByLenghtChecker];
             scriptGround.BotHeight = new float[cellByLenghtChecker];
-            scriptGround.InterpolateLeftHeightValue = new float[cellByLenghtChecker * cellDensity+1];
-            scriptGround.InterpolateBotHeightValue = new float[cellByLenghtChecker * cellDensity+1];
+            scriptGround.InterpolateLeftHeightValue = new float[cellByLenghtChecker * cellDensity + 1];
+            scriptGround.InterpolateBotHeightValue = new float[cellByLenghtChecker * cellDensity + 1];
         }
     }
 
@@ -1737,10 +1741,10 @@ public class GroundGeneratorWindow : EditorWindow
                 #region Right
                 if (y != 0 && index < (checkerOnTheLenght * (y + 1)) - 1)//Right after first column
                     ground.RightChecker = true;
-                else if(y == 0 && index + 1 < checkerOnTheLenght)//Right in first column
+                else if (y == 0 && index + 1 < checkerOnTheLenght)//Right in first column
                     ground.RightChecker = true;
-                
-                if(ground.RightChecker)
+
+                if (ground.RightChecker)
                 {
                     GroundBaseGenerator scriptGround = checker[index + 1].GetComponent<GroundBaseGenerator>();//Right checker
                     ground.RightGroundGenrator = scriptGround;
@@ -1751,17 +1755,17 @@ public class GroundGeneratorWindow : EditorWindow
                 else
                 {
                     for (int i = 0; i < cellByLenghtChecker; i++)
-                        ground.RightHeight[i] = ground.MapDefinition.MapRowsData[i].Row[cellByLenghtChecker-1];
+                        ground.RightHeight[i] = ground.MapDefinition.MapRowsData[i].Row[cellByLenghtChecker - 1];
                 }
                 #endregion
-                
+
                 #region Left
                 if (y != 0 && index - 1 >= (checkerOnTheLenght * y)) //left after first column
                     ground.LeftChecker = true;
                 else if (y == 0 && index - 1 >= 0)//left in first column
                     ground.LeftChecker = true;
-                
-                if(ground.LeftChecker)
+
+                if (ground.LeftChecker)
                 {
                     GroundBaseGenerator scriptGround = checker[index - 1].GetComponent<GroundBaseGenerator>();
                     for (int i = 0; i < cellByLenghtChecker; i++)
