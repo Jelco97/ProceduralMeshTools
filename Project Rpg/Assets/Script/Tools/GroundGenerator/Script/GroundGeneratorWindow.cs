@@ -997,6 +997,8 @@ public class GroundGeneratorWindow : EditorWindow
         buttonRect.x += 160;
         if (GUI.Button(buttonRect, "Flatten"))
         {
+            CalculateHeightBorder();
+
             if (skinFlattenVue)
                 FlattenCurrentCheckboard();
             else
@@ -1512,6 +1514,7 @@ public class GroundGeneratorWindow : EditorWindow
                     heightCell.MapRowsData[y].Row[x] = flattenCellValueCheckboard;
                 }
         }
+        CalculateHeightBorder();
         RebuildAllGround();
     }
 
@@ -1547,6 +1550,8 @@ public class GroundGeneratorWindow : EditorWindow
                 #region Initialisation
                 groundScript.NumberCellByLenght = cell;
                 groundScript.Density = cellDensity;
+                groundScript.ZposIndexInTheMap = y;
+                groundScript.XposIndexInTheMap = x;
                 if (!skinLoadGroundVue)
                 {
                     groundScript.MapDefinition = new HeightGround();
@@ -1594,6 +1599,8 @@ public class GroundGeneratorWindow : EditorWindow
             script.Density = cellDensity;
             script.MapDefinition.NewRowArray(cellByLenghtChecker);
         }
+
+        InitialisationBorderArray();
 
         CalculateHeightBorder();
 
@@ -1673,7 +1680,7 @@ public class GroundGeneratorWindow : EditorWindow
                     script.Density = cellDensity;
                     script.MapDefinition = new HeightGround();
                     script.MapDefinition.InitialisationRowArray(cellByLenghtChecker);
-                    script.GenerateGroundBase();
+                    //script.GenerateGroundBase();
 
                     newChecker.GetComponent<MeshRenderer>().material = CheckerMaterial;
                 }
@@ -1710,6 +1717,8 @@ public class GroundGeneratorWindow : EditorWindow
             }
         }
         #endregion
+
+        RebuildAllGround();
     }
 
     void InitialisationBorderArray()
@@ -1721,8 +1730,8 @@ public class GroundGeneratorWindow : EditorWindow
             scriptGround.LeftHeight = new float[cellByLenghtChecker];
             scriptGround.TopHeight = new float[cellByLenghtChecker];
             scriptGround.BotHeight = new float[cellByLenghtChecker];
-            scriptGround.InterpolateLeftHeightValue = new float[cellByLenghtChecker * cellDensity + 1];
-            scriptGround.InterpolateBotHeightValue = new float[cellByLenghtChecker * cellDensity + 1];
+           scriptGround.InterpolateLeftHeightValue = new float[cellByLenghtChecker * cellDensity + 1];
+           scriptGround.InterpolateBotHeightValue = new float[cellByLenghtChecker * cellDensity + 1];
         }
     }
 
@@ -1747,7 +1756,7 @@ public class GroundGeneratorWindow : EditorWindow
                 if (ground.RightChecker)
                 {
                     GroundBaseGenerator scriptGround = checker[index + 1].GetComponent<GroundBaseGenerator>();//Right checker
-                    ground.RightGroundGenrator = scriptGround;
+                    ground.RightGroundGenerator = scriptGround;
 
                     for (int i = 0; i < cellByLenghtChecker; i++)
                         ground.RightHeight[i] = scriptGround.MapDefinition.MapRowsData[i].Row[0];
@@ -1768,6 +1777,8 @@ public class GroundGeneratorWindow : EditorWindow
                 if (ground.LeftChecker)
                 {
                     GroundBaseGenerator scriptGround = checker[index - 1].GetComponent<GroundBaseGenerator>();
+                    //ground.LeftGroundGenrator = scriptGround;
+
                     for (int i = 0; i < cellByLenghtChecker; i++)
                         ground.LeftHeight[i] = scriptGround.MapDefinition.MapRowsData[i].Row[cellByLenghtChecker - 1];
                 }
@@ -1799,6 +1810,8 @@ public class GroundGeneratorWindow : EditorWindow
                 {
                     ground.BotChecker = true;
                     GroundBaseGenerator scriptGround = checker[index - checkerOnTheLenght].GetComponent<GroundBaseGenerator>();
+                    //ground.BotGroundGenrator = scriptGround;
+
                     for (int i = 0; i < cellByLenghtChecker; i++)
                         ground.BotHeight[i] = scriptGround.MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[i];
                 }
@@ -1828,42 +1841,39 @@ public class GroundGeneratorWindow : EditorWindow
                 #endregion
 
                 #region Diagonal Bot Right and Bot Left
-                if (ground.BotChecker)//diagonal
+                if (ground.RightChecker && ground.BotChecker)//Bot Right
                 {
-                    if (ground.RightChecker)//Bot Right
-                    {
-                        ground.DiagonalRightBotChecker = true;
-                        ground.DiagonalRightBotHeight = checker[index - checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[0];
-                    }
-
-                    if (ground.LeftChecker)//Bot Left
-                    {
-                        ground.DiagonalLeftBotChecker = true;
-                        ground.DiagonalLeftBotHeight = checker[index - checkerOnTheLenght - 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[cellByLenghtChecker - 1];
-                    }
+                    ground.DiagonalRightBotChecker = true;
+                    ground.DiagonalRightBotHeight = checker[index - checkerOnTheLenght + 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[0];
                 }
                 else
-                {
                     ground.DiagonalRightBotHeight = ground.MapDefinition.MapRowsData[0].Row[cellByLenghtChecker - 1];//Right Bot
-                    ground.DiagonalLeftBotHeight = ground.MapDefinition.MapRowsData[0].Row[0];//Left Bot
-                }
-                #endregion
 
+                if (ground.LeftChecker && ground.BotChecker)//Bot Left
+                {
+                    ground.DiagonalLeftBotChecker = true;
+                    ground.DiagonalLeftBotHeight = checker[index - checkerOnTheLenght - 1].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[cellByLenghtChecker - 1].Row[cellByLenghtChecker - 1];
+                }
+                else
+                    ground.DiagonalLeftBotHeight = ground.MapDefinition.MapRowsData[0].Row[0];//Left Bot            
+                #endregion
                 index++;
             }
         }
     }
 
+
     void RebuildCurrentChecker()
     {
         CalculateHeightBorder();
+        
+        if (indexCurrentChecker + 1 <= checker.Count -1)//right
+            RebuildSpecificChecker(indexCurrentChecker + 1);
+
+        if (indexCurrentChecker + checkerOnTheLenght <= checker.Count - 1)//top
+            RebuildSpecificChecker(indexCurrentChecker + checkerOnTheLenght);
+
         RebuildSpecificChecker(indexCurrentChecker);
-
-        if (indexCurrentChecker - 1 >= 0)
-            RebuildSpecificChecker(indexCurrentChecker - 1);
-
-        if (indexCurrentChecker - checkerOnTheLenght >= 0)
-            RebuildSpecificChecker(indexCurrentChecker - checkerOnTheLenght);
     }
 
     /// <summary>
@@ -1895,10 +1905,12 @@ public class GroundGeneratorWindow : EditorWindow
     void RebuildAllGround()
     {
         CalculateHeightBorder();
-
+        height.Clear();
+        
         for (int index = 0; index < checker.Count; index++)
         {
             checker[index].GetComponent<GroundBaseGenerator>().GenerateGroundBase();
+            height.Add(checker[index].GetComponent<GroundBaseGenerator>().MapDefinition);
 
             for (int y = 0; y < cellByLenghtChecker; y++)
             {
@@ -1913,7 +1925,7 @@ public class GroundGeneratorWindow : EditorWindow
                             obj.transform.position.z);
                     }
                 }
-            }
+            }            
         }
     }
 

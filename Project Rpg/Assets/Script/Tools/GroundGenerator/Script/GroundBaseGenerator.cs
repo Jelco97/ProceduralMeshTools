@@ -10,28 +10,41 @@ public class GroundBaseGenerator : MonoBehaviour
     public int Density = 1;
     public int NumberCellByLenght = 10;
     public int IndexInTheCheckboard;
+    public int ZposIndexInTheMap = 0;
+    public int XposIndexInTheMap = 0;
+
+    [Header("Noise")]
+    public float NoiseFrequency = .7f;
+    public int NoiseOctaves = 1;
+    public float NoiseGain = 0.2f;
+    public float NoiseLacunarity = 2f;
+    public float NoiseIntensity = .45f;
 
     [Header("Left Checker")]
     public bool LeftChecker;
     public float[] LeftHeight;
     //[HideInInspector]
     public float[] InterpolateLeftHeightValue;
+    //public GroundBaseGenerator LeftGroundGenerator;
 
     [Header("Right Checker")]
     public bool RightChecker;
     public float[] RightHeight;
     private bool rightChecker;
-    public GroundBaseGenerator RightGroundGenrator;
+    public GroundBaseGenerator RightGroundGenerator;
+    //public float[] InterpolateRightHeightValue;
 
     [Header("Top Checker")]
     public bool TopChecker;
     public float[] TopHeight;
     private bool topChecker;
     public GroundBaseGenerator TopGroundGenerator;
+    //public float[] InterpolateTopHeightValue;
 
     [Header("Bot Checker")]
     public bool BotChecker;
     public float[] BotHeight;
+    //public GroundBaseGenerator BotGroundGenerator;
     //[HideInInspector]
     public float[] InterpolateBotHeightValue;
 
@@ -173,39 +186,39 @@ public class GroundBaseGenerator : MonoBehaviour
                                 heightLB = MaxHeight(MapDefinition.MapRowsData[NumberCellByLenght - 1].Row[NumberCellByLenght - 1],//left
                                     MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[NumberCellByLenght - 1],//bot
                                     MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[NumberCellByLenght - 2],// diagonal lb
-MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
+                                    MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
 
                                 heightRT = MaxHeight(RightHeight[NumberCellByLenght - 1],//right
                                     TopHeight[NumberCellByLenght - 1],//top
                                     DiagonalRightTopHeight,//diagonal rt
-MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
+                                    MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
 
                                 heightRB = MaxHeight(RightHeight[NumberCellByLenght - 1],//Right
-                                     MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[NumberCellByLenght - 1],//bot
-                                     RightHeight[NumberCellByLenght - 2],//diagonal rb
-MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
+                                    MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[NumberCellByLenght - 1],//bot
+                                    RightHeight[NumberCellByLenght - 2],//diagonal rb
+                                    MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
                             }
                             else
                             {
                                 heightLT = MaxHeight(MapDefinition.MapRowsData[NumberCellByLenght - 1].Row[Xindex - 1],//left
                                     TopHeight[Xindex],//top
                                     TopHeight[Xindex - 1],//diagonal lt
-MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
+                                    MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
 
                                 heightLB = MaxHeight(MapDefinition.MapRowsData[NumberCellByLenght - 1].Row[Xindex - 1],//left
                                     MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[Xindex],//bot
                                     MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[Xindex - 1],// diagonal lb
-MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
+                                    MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
 
                                 heightRT = MaxHeight(MapDefinition.MapRowsData[NumberCellByLenght - 1].Row[Xindex + 1],//right
                                     TopHeight[Xindex],//top
                                     TopHeight[Xindex + 1],//diagonal rt
-MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
+                                    MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
 
                                 heightRB = MaxHeight(MapDefinition.MapRowsData[NumberCellByLenght - 1].Row[Xindex + 1],//right
                                     MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[Xindex],//bot
                                     MapDefinition.MapRowsData[NumberCellByLenght - 2].Row[Xindex + 1],// diagonal rb
-MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
+                                    MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.Min(Xindex, NumberCellByLenght - 1)]);
                             }
                         }
                         #endregion
@@ -360,36 +373,32 @@ MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.M
                         float blendU = Mathf.Lerp(heightLT, heightRT, fracXPos);
                         float blendD = Mathf.Lerp(heightLB, heightRB, fracXPos);
                         float height = Mathf.Lerp(blendD, blendU, fracZPos);
-                        positionVertex.y = height;
+
+                        float fzPosNoise = ZposIndexInTheMap % 2 == 0 ? fzPos : (((NumberCellByLenght+1) - z) + .5f) / Density;
+                        float fxPosNoise = XposIndexInTheMap % 2 == 0 ? fxPos : ((((NumberCellByLenght+1) - x) + .5f)) / Density;
+
+                        positionVertex.y = height + getNoise(fxPosNoise, fzPosNoise) * NoiseIntensity;
                     }
                     else
                         positionVertex.y = 0;
 
-                    #region Extremity Right and top
+                    #region Extremity top and right
                     if (z == NumberCellByLenght * Density && TopChecker)//top
-                    {
                         positionVertex.y = TopGroundGenerator.InterpolateBotHeightValue[(int)x];
-                    }
                     else if (x == NumberCellByLenght * Density && RightChecker)//right
-                    {
-                        positionVertex.y = RightGroundGenrator.InterpolateLeftHeightValue[(int)z];
-                    }
+                        positionVertex.y = RightGroundGenerator.InterpolateLeftHeightValue[(int)z];
                     #endregion
 
-                    #region Extremity Bot and left
+                    #region Extremity bot & left
                     if (z == 0)//bot
-                    {
                         InterpolateBotHeightValue[(int)x] = positionVertex.y;
-                    }
-                    if (Xindex == NumberCellByLenght)//right
-                    {
+                    if(x == 0)//left
                         InterpolateLeftHeightValue[(int)z] = positionVertex.y;
-                    }
                     #endregion
                 }
 
                 vertexColor[index] = VertexColorByHeight(positionVertex.y);
-                uv[index] = new Vector2(x / (numSideQuad + 1), z / (numSideQuad + 1));
+                uv[index] = new Vector2(x / (numSideQuad), z / (numSideQuad));
                 vertices[index++] = positionVertex;
             }
 
@@ -459,6 +468,22 @@ MapDefinition.MapRowsData[Mathf.Min(Zindex, NumberCellByLenght - 1)].Row[Mathf.M
             return true;
         else
             return false;
+    }
+
+    private float getNoise(float x, float y)
+    {
+        float height = 0.0f;
+
+        float frequency = NoiseFrequency;
+        float amplitude = NoiseLacunarity;
+        for (int i = 0; i < NoiseOctaves; i++)
+        {
+            height += (Mathf.PerlinNoise(x * frequency, y * frequency) - 0.5f) * amplitude;
+
+            frequency *= NoiseLacunarity;
+            amplitude *= NoiseGain;
+        }
+        return height;
     }
 
     float MaxHeight(float x, float y, float z, float w)
