@@ -21,6 +21,7 @@ public class Cell
         public bool Walkable;
         public GroundElement GroundAtribut;
         public EventCell EventScript;
+        public GameObject PlaneOnTheCell;
     }
 
     public CellData CellContaint = new CellData();

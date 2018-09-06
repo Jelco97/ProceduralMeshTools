@@ -70,6 +70,8 @@ public class GroundGeneratorWindow : EditorWindow
     ///Save Cell
     EventCell eventCell;
     GameObject eventCellFolder;
+    GameObject planeOnTheCell;
+    GameObject planeFolder;
 
     ///FlattenPainterEditor
     float flattenPainterValueAsigned;
@@ -351,6 +353,7 @@ public class GroundGeneratorWindow : EditorWindow
     void SaveCellVue()
     {
         skinSaveCellVue = true;
+        repaint = true;
     }
     #endregion
 
@@ -644,15 +647,16 @@ public class GroundGeneratorWindow : EditorWindow
 
     void SaveCellEditor()
     {
-        Rect backgroundBorderRect = new Rect(MidlePos(new Vector2(406, 126)), new Vector2(406, 126));/////
+        Rect backgroundBorderRect = new Rect(MidlePos(new Vector2(406, 226)), new Vector2(406, 176));/////
         EditorGUI.DrawRect(backgroundBorderRect, borderColor);
 
-        Rect backgroundRect = new Rect(MidlePos(new Vector2(400, 120)), new Vector2(400, 120));
+        Rect backgroundRect = new Rect(MidlePos(new Vector2(400, 220)), new Vector2(400, 170));
         EditorGUI.DrawRect(backgroundRect, backgroundColor);
 
         Rect labelRect = new Rect(backgroundRect.x + 10, backgroundRect.y + 10, 380, 20);
         EditorGUI.LabelField(labelRect, "Event Cell Folder", subtitle);
 
+        #region folder
         Rect backgroundBorderFieldRect = new Rect(labelRect.x + 20, labelRect.y + 30, 340, 20);
         EditorGUI.DrawRect(backgroundBorderFieldRect, borderColor);
 
@@ -662,22 +666,49 @@ public class GroundGeneratorWindow : EditorWindow
 
         Rect backgroundFieldRect = new Rect(backgroundBorderFieldRect.x + 100, backgroundBorderFieldRect.y + 3, 237, 14);
         EditorGUI.DrawRect(backgroundFieldRect, backgroundColor);
-
+        
         eventCellFolder = (GameObject)EditorGUI.ObjectField(backgroundFieldRect, eventCellFolder, typeof(GameObject), true);
 
         if (eventCellFolder && eventCellFolder.GetComponent<EventCell>())
             eventCell = eventCellFolder.GetComponent<EventCell>();
-
-        Rect buttonRect = new Rect(backgroundRect.x + 30, backgroundRect.y + 75, 100, 30);
-        if (GUI.Button(buttonRect, "Cancel"))
+        else if(eventCellFolder && !eventCellFolder.GetComponent<EventCell>())
         {
-            skinSaveCellVue = false;
+            Debug.Log("Event cell folder didn't containt a script EventCell !");
+            eventCellFolder = null;
         }
+        #endregion
+
+        #region Plane
+        backgroundBorderFieldRect.y += 40;
+        EditorGUI.DrawRect(backgroundBorderFieldRect, borderColor);
+        
+        Displacementfield(backgroundBorderFieldRect, true);
+        GUI.Label(backgroundBorderFieldRect, "Plane");
+        Displacementfield(backgroundBorderFieldRect, false);
+
+        backgroundFieldRect.y += 40;
+        EditorGUI.DrawRect(backgroundFieldRect, backgroundColor);
+
+        planeOnTheCell = (GameObject)EditorGUI.ObjectField(backgroundFieldRect, planeOnTheCell, typeof(GameObject), true);
+        #endregion
+
+        Rect buttonRect = new Rect(backgroundRect.x + 30, backgroundRect.y + 120, 100, 30);
+        if (GUI.Button(buttonRect, "Cancel"))
+            skinSaveCellVue = false;
 
         buttonRect.x += 240;
-        if (GUI.Button(buttonRect, "Save Cell") && eventCell)// && currentMapDataSave
+        if (GUI.Button(buttonRect, "Save Cell") && eventCell && planeOnTheCell)// && currentMapDataSave
         {
             eventCell.Ground = new Cell[(cellByLenghtChecker * cellByLenghtChecker) * (checkerOnTheHeight * checkerOnTheLenght)];
+            if(eventCell.transform.Find("Plane_Folder"))
+                DestroyImmediate(eventCell.transform.Find("Plane_Folder").gameObject);
+
+            planeFolder = new GameObject();
+            planeFolder.name = "Plane_Folder";
+            planeFolder.transform.parent = eventCell.transform;            
+
+            float posOnTheLenght = 0;
+            float posOnTheHeight = 0;
 
             int indexCell = 0;
             for (int indexChecker = 0; indexChecker < checker.Count; indexChecker++)
@@ -686,13 +717,30 @@ public class GroundGeneratorWindow : EditorWindow
                 {
                     for (int x = 0; x < cellByLenghtChecker; x++)
                     {
-                        eventCell.Ground[indexCell] = checker[indexChecker].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].CellsInformation[x];
-                        eventCell.Ground[indexCell].CellContaint.Height = checker[indexChecker].GetComponent<GroundBaseGenerator>().MapDefinition.MapRowsData[y].Row[x];
+                        GroundBaseGenerator groundBase = checker[indexChecker].GetComponent<GroundBaseGenerator>();
+                        posOnTheLenght = groundBase.XposIndexInTheMap;
+                        posOnTheHeight = groundBase.ZposIndexInTheMap;
+
+                        if (groundBase.MapDefinition.MapRowsData[y].Row[x] == 0)
+                        {
+                            GameObject obj = groundBase.MapDefinition.MapRowsData[y].CellsInformation[x].CellContaint.PlaneOnTheCell =
+                                Instantiate(planeOnTheCell, new Vector3(x + posOnTheLenght * cellByLenghtChecker +.5f, 0.1f, y + posOnTheHeight * cellByLenghtChecker +.5f), Quaternion.identity);
+                            obj.transform.parent = planeFolder.transform;
+                        }
+
+                        eventCell.Ground[indexCell] = groundBase.MapDefinition.MapRowsData[y].CellsInformation[x];
+                        eventCell.Ground[indexCell].CellContaint.Height = groundBase.MapDefinition.MapRowsData[y].Row[x];
+                        
+
                         indexCell++;
                     }
                 }
             }
             skinSaveCellVue = false;
+        }
+        else if(GUI.Button(buttonRect, "Save Cell") && !eventCell || planeOnTheCell)
+        {
+            Debug.Log("Asigne a correct event cell folder or a plane on the cell");
         }
     }
 
@@ -1604,8 +1652,8 @@ public class GroundGeneratorWindow : EditorWindow
 
         CalculateHeightBorder();
 
-        foreach (GameObject obj in checker)
-            obj.GetComponent<GroundBaseGenerator>().GenerateGroundBase();
+        //foreach (GameObject obj in checker)
+        //    obj.GetComponent<GroundBaseGenerator>().GenerateGroundBase();
         #endregion
 
         #region Checker
@@ -1632,7 +1680,7 @@ public class GroundGeneratorWindow : EditorWindow
                     script.Density = cellDensity;
                     script.MapDefinition = new HeightGround();
                     script.MapDefinition.InitialisationRowArray(cellByLenghtChecker);
-                    script.GenerateGroundBase();
+                    //script.GenerateGroundBase();
 
                     newChecker.GetComponent<MeshRenderer>().material = CheckerMaterial;
                 }
@@ -1712,6 +1760,9 @@ public class GroundGeneratorWindow : EditorWindow
         {
             for (int x = 0; x < checkerOnTheLenght; x++)
             {
+                checker[index].GetComponent<GroundBaseGenerator>().XposIndexInTheMap = x;
+                checker[index].GetComponent<GroundBaseGenerator>().ZposIndexInTheMap = y;
+
                 checker[index].transform.position = new Vector3(x * (cellByLenghtChecker), 0, y * (cellByLenghtChecker));
                 index++;
             }

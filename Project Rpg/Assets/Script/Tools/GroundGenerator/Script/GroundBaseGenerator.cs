@@ -370,14 +370,14 @@ public class GroundBaseGenerator : MonoBehaviour
                                 MapDefinition.MapRowsData[Zindex].Row[Xindex]);
                         }
 
+                        float fzPosNoise = ZposIndexInTheMap % 2 == 0 ? fzPos : (((numSideQuad + 1) - z) + .5f) / Density;
+                        float fxPosNoise = XposIndexInTheMap % 2 == 0 ? fxPos : ((((numSideQuad + 1) - x) + .5f)) / Density;
+
                         float blendU = Mathf.Lerp(heightLT, heightRT, fracXPos);
                         float blendD = Mathf.Lerp(heightLB, heightRB, fracXPos);
                         float height = Mathf.Lerp(blendD, blendU, fracZPos);
-
-                        float fzPosNoise = ZposIndexInTheMap % 2 == 0 ? fzPos : (((NumberCellByLenght+1) - z) + .5f) / Density;
-                        float fxPosNoise = XposIndexInTheMap % 2 == 0 ? fxPos : ((((NumberCellByLenght+1) - x) + .5f)) / Density;
-
-                        positionVertex.y = height + getNoise(fxPosNoise, fzPosNoise) * NoiseIntensity;
+                        
+                        positionVertex.y = height + ((getNoise(fxPosNoise, fzPosNoise) * NoiseIntensity) * Mathf.Min(1, height));
                     }
                     else
                         positionVertex.y = 0;
@@ -488,9 +488,10 @@ public class GroundBaseGenerator : MonoBehaviour
 
     float MaxHeight(float x, float y, float z, float w)
     {
+
         if (x == 0 || y == 0 || z == 0 || w == 0)
             return 0;
-
+        
         else if (x >= y && x >= z && x >= w)
             return x;
 
